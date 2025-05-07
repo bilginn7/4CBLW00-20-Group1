@@ -172,5 +172,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-
-/data
+/data/all_crime_data_zips
