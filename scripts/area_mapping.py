@@ -64,18 +64,18 @@ def build_lookup_parquet(out_file: str | Path, key: str, file_specs: Sequence[di
 if __name__ == "__main__":
     SPECS = [
         {  # 1: OA → LSOA → MSOA (188k rows)
-            "path": "../data/Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv",
+            "path": "../data/lookup/Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv",
             "columns": ["OA21CD",
                         "LSOA21CD", "LSOA21NM",
                         "MSOA21CD", "MSOA21NM"],
         },
         {  # 2: LSOA11 → LSOA21 → LAD (35k rows)
-            "path": "../data/LSOA_(2011)_to_LSOA_(2021)_to_Local_Authority_District_(2022)_Exact_Fit_Lookup_for_EW_(V3).csv",
+            "path": "../data/lookup/LSOA_(2011)_to_LSOA_(2021)_to_Local_Authority_District_(2022)_Exact_Fit_Lookup_for_EW_(V3).csv",
             "columns": ["LSOA21CD", "LSOA11CD", "CHGIND",
                         "LAD22CD",  "LAD22NM"],
         },
         {  # 3: LSOA21 → Ward24 (35k rows)
-            "path": "../data/LSOA_(2021)_to_Electoral_Ward_(2024)_to_LAD_(2024)_Best_Fit_Lookup_in_EW.csv",
+            "path": "../data/lookup/LSOA_(2021)_to_Electoral_Ward_(2024)_to_LAD_(2024)_Best_Fit_Lookup_in_EW.csv",
             "columns": ["LSOA21CD", "WD24CD", "WD24NM"],
         },
     ]
