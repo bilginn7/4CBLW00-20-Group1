@@ -174,3 +174,6 @@ cython_debug/
 .pypirc
 /data/all_crime_data_zips
 /data/all_crime_data_parquet/
+
+
+data/crimes
