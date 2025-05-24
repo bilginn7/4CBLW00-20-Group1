@@ -1,8 +1,6 @@
 from pathlib import Path
 import csv, logging, os, polars as pl
-from concurrent.futures import ProcessPoolExecutor
 from tqdm.contrib.concurrent import process_map
-from collections import defaultdict
 
 # Logging module
 logging.basicConfig(
