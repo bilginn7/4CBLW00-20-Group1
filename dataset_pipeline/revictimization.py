@@ -5,7 +5,17 @@ def _timing_factor(lag_expr: pl.Expr) -> pl.Expr:
     val = 0.106 * lag_expr.pow(-0.383) - 0.018
     return pl.when(lag_expr <= 0).then(0.0).otherwise(pl.max_horizontal(val, pl.lit(0.0)))
 
-def add_revictimization_risk(df, max_lag=24, prob=0.134) -> pl.DataFrame:
+def add_revictimization_risk(df, max_lag: int = 24, prob: float = 0.134) -> pl.LazyFrame:
+    """Compute revictimization risk, based on the previous months burglary counts.
+
+    Args:
+        df: Dataframe.
+        max_lag: Looks back this many months.
+        prob: Probability of being revictimized.
+
+    Returns:
+        pl.LazyFrame: LazyFrame with revictimization risk column.
+    """
     df = to_dataframe(df).clone()
     df = df.with_columns(pl.datetime(pl.col("year"), pl.col("month"), 1).alias("month_dt"))
     df = df.sort(["LSOA code","month_dt"])
@@ -20,4 +30,4 @@ def add_revictimization_risk(df, max_lag=24, prob=0.134) -> pl.DataFrame:
         .alias("revictimization_risk")
     ).drop([f"lag_{l}_w" for l in range(1, max_lag+1)] + ["month_dt"])
 
-    return df
+    return df.lazy()

@@ -5,7 +5,17 @@ def add_neighbor_features(main_df: pl.DataFrame,
                           neighbors_path=_S.NEIGH_PATH,
                           location_col="LSOA code",
                           target="burglary_count") -> pl.DataFrame:
+    """Adds features related to the nearest neighbors.
 
+    Args:
+        main_df: Dataframe.
+        neighbors_path: Path to neighbors file.
+        location_col: Column name for location.
+        target: Target column.
+
+    Returns:
+        pl.DataFrame: DataFrame with neighbor features.
+    """
     neighbors = pl.read_parquet(neighbors_path)
 
     expanded = main_df.join(
@@ -37,10 +47,18 @@ def add_neighbor_features(main_df: pl.DataFrame,
     return main_df.join(spatial_features, on=[location_col,"year","month"], how="left")
 
 
-def filter_residential_lsoas(df: pl.DataFrame,
-                           lsoa_col: str = "LSOA code",
-                           residential_classification_path: str = _S.RES_CLASS_PATH) -> pl.DataFrame:
-    """Filter dataframe to only include residential-dominant LSOAs"""
+def filter_residential_lsoas(df: pl.DataFrame, lsoa_col: str = "LSOA code",
+                             residential_classification_path: str = _S.RES_CLASS_PATH) -> pl.DataFrame:
+    """Filter dataframe to only include residential-dominant LSOAs
+
+    Args:
+        df: Dataframe.
+        lsoa_col: Column name for LSOA codes.
+        residential_classification_path: Path to residential classification file.
+
+    Returns:
+        pl.DataFrame: Filtered dataframe.
+    """
 
     residential_df = pl.read_csv(residential_classification_path)
 

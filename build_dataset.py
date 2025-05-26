@@ -1,16 +1,6 @@
-from dataset_pipeline import (
-    normalize_time,
-    create_full_grid,
-    is_holiday_month,
-    add_population_data,
-    add_imd_data,
-    add_housing_data,
-    add_neighbor_features,
-    add_temporal_features,
-    add_revictimization_risk,
-    filter_residential_lsoas,
-)
+from dataset_pipeline import *
 from dataset_pipeline import settings as S
+import polars as pl
 
 DATA_DIR = S.DATA_DIR
 
@@ -19,13 +9,14 @@ DATA_DIR = S.DATA_DIR
 # ------------------------------------------------------------------#
 df = normalize_time(S.DATA_PATH)
 df = create_full_grid(df)
-df = df.with_columns(is_holiday_month(df["month"]).alias("holiday_month"))
+df = df.with_columns(is_holiday_month(pl.col("month")).alias("holiday_month"))
 df = add_population_data(df)
 df = add_imd_data(df)
 df = add_housing_data(df)
-df = add_neighbor_features(df)
 df = add_temporal_features(df)
 df = add_revictimization_risk(df)
+df = df.collect()
+df = add_neighbor_features(df)
 df = filter_residential_lsoas(df)
 
 # save the COMPLETE table
@@ -58,7 +49,7 @@ y_test.write_parquet (DATA_DIR / "y_test.parquet")
 
 print(
     "✓ files saved:\n"
-    f"  • {full_path.name}   : {df.shape[0]:,} rows × {df.shape[1]} cols\n"
+    f"  • {full_path.name}    : {df.shape[0]:,} rows × {df.shape[1]} cols\n"
     f"  • X_train.parquet     : {X_train.shape[0]:,} rows × {X_train.shape[1]} cols\n"
     f"  • X_test.parquet      : {X_test.shape[0]:,} rows × {X_test.shape[1]} cols\n"
     f"  • y_train.parquet     : {y_train.shape[0]:,} rows\n"

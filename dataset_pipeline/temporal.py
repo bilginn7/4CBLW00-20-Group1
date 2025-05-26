@@ -7,6 +7,15 @@ from .io import to_dataframe, to_lazyframe
 DFLike = Union[str, pl.DataFrame, pl.LazyFrame]
 
 def normalize_time(df, date_col: str = "Month") -> pl.LazyFrame:
+    """Adds normalized time columns.
+
+    Args:
+        df: Dataframe.
+        date_col: Column name for date.
+
+    Returns:
+        pl.LazyFrame: LazyFrame with normalized time columns.
+    """
     lf = to_lazyframe(df)
 
     # Parse Month column once
@@ -37,21 +46,12 @@ def normalize_time(df, date_col: str = "Month") -> pl.LazyFrame:
     )
 
 
-def add_temporal_features(
-    df: DFLike,
-    *,
-    location_col: str = "LSOA code",
-    target_col: str = "burglary_count",
-) -> pl.DataFrame:
+def add_temporal_features(df: DFLike, *, location_col: str = "LSOA code", target_col: str = "burglary_count") -> pl.LazyFrame:
     """Engineer lagged, rolling, seasonal and derived features.
 
-    Rows **are NOT dropped** if they lack 24 months of look-back; feature
-    columns will simply contain `null` for those early periods.
+    Feature columns will simply contain `null` for the early periods.
     """
-    main = (
-        to_dataframe(df)
-        .sort([location_col, "year", "month"])
-    )
+    main = to_dataframe(df).sort([location_col, "year", "month"])
 
     return (
         main.with_columns([
@@ -92,4 +92,4 @@ def add_temporal_features(
             (pl.col(f"{target_col}_std_6m_lag3") / (pl.col(f"{target_col}_avg_6m_lag3") + 0.1)).alias(f"{target_col}_cv_6m"),
             ((pl.col(f"{target_col}_max_6m_lag3") - pl.col(f"{target_col}_min_6m_lag3")) / (pl.col(f"{target_col}_avg_6m_lag3") + 0.1)).alias(f"{target_col}_range_normalized"),
         ])
-    )
+    ).lazy()

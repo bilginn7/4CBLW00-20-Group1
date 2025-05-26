@@ -32,11 +32,7 @@ def load_population_long(path=_S.POP_PATH, loc="LSOA code") -> pl.DataFrame:
     return pop_long.join(dens_long, on=[loc,"year"], how="inner")
 
 
-def predict_missing_years(
-    pop_data: pl.DataFrame,
-    missing_years: List[int],
-    loc: str = "LSOA code",
-) -> pl.DataFrame:
+def predict_missing_years(pop_data: pl.DataFrame, missing_years: List[int], loc: str = "LSOA code") -> pl.DataFrame:
     """Linear-trend extrapolation when burglars out-run the ONS :)"""
     trends = (
         pop_data.group_by(loc).agg([
@@ -69,11 +65,7 @@ def predict_missing_years(
     return pl.concat(rows)
 
 
-def add_population_data(
-    df,
-    pop_path: str = _S.POP_PATH,
-    loc: str = "LSOA code",
-) -> pl.DataFrame:
+def add_population_data(df, pop_path: str = _S.POP_PATH, loc: str = "LSOA code") -> pl.LazyFrame:
     """Attach population & density columns to the burglary table (and predict future years)."""
     main = to_dataframe(df)
     pop  = load_population_long(pop_path, loc)
@@ -90,7 +82,7 @@ def add_population_data(
 
         pop = pl.concat([pop, preds], rechunk=True)
 
-    return main.join(pop, on=[loc, "year"], how="left")
+    return main.join(pop, on=[loc, "year"], how="left").lazy()
 
 def add_imd_data(
     df,
@@ -98,7 +90,7 @@ def add_imd_data(
     imd15: str = _S.IMD_2015_PATH,
     imd19: str = _S.IMD_2019_PATH,
     loc: str = "LSOA code",
-) -> pl.DataFrame:
+) -> pl.LazyFrame:
     """Join the right IMD snapshot for the given year."""
     main     = to_dataframe(df)
     imd_2010 = pl.read_parquet(imd10)
@@ -109,18 +101,14 @@ def add_imd_data(
         main.filter(pl.col("year").is_between(2010, 2014)).join(imd_2010, on=loc, how="left"),
         main.filter(pl.col("year").is_between(2015, 2018)).join(imd_2015, on=loc, how="left"),
         main.filter(pl.col("year") >= 2019).join(imd_2019, on=loc, how="left"),
-    ]).sort([loc, "year", "month"])
+    ]).sort([loc, "year", "month"]).lazy()
 
 
-def add_housing_data(
-    df,
-    housing_path: str = _S.HOUSING_PATH,
-    loc: str = "LSOA code",
-) -> pl.DataFrame:
+def add_housing_data(df, housing_path: str = _S.HOUSING_PATH, loc: str = "LSOA code") -> pl.LazyFrame:
     """Join property-type fractions; drop AREA_NAME and fill nulls with 0."""
     main = to_dataframe(df)
     hdf  = pl.read_parquet(housing_path).drop("AREA_NAME")
 
     joined = main.join(hdf, on=loc, how="left")
     h_cols = [c for c in hdf.columns if c != loc]
-    return joined.with_columns(pl.col(h_cols).fill_null(0))
+    return joined.with_columns(pl.col(h_cols).fill_null(0)).lazy()

@@ -1,7 +1,17 @@
 import polars as pl
 from .io import to_dataframe
 
-def create_full_grid(df, location_col="LSOA code", count_col="burglary_count") -> pl.DataFrame:
+def create_full_grid(df, location_col="LSOA code", count_col="burglary_count") -> pl.LazyFrame:
+    """Generates data table for burglaries per LSOA and month.
+
+    Args:
+        df: Dataframe.
+        location_col: Column name for location.
+        count_col: Column name for count.
+
+    Returns:
+        pl.LazyFrame: LazyFrame with full grid.
+    """
     data = to_dataframe(df)
     unique_locations = data.select(location_col).unique()
     unique_months = data.select(["year","month","month_sin","month_cos","time_index_norm"]).unique()
@@ -14,7 +24,8 @@ def create_full_grid(df, location_col="LSOA code", count_col="burglary_count") -
 
     return (
         full_grid.join(aggregated, on=[location_col,"year","month"], how="left")
-                 .with_columns(pl.col(count_col).fill_null(0))
+            .with_columns(pl.col(count_col).fill_null(0))
+            .lazy()
     )
 
 
