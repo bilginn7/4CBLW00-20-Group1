@@ -8,6 +8,7 @@ from dataset_pipeline import (
     add_neighbor_features,
     add_temporal_features,
     add_revictimization_risk,
+    filter_residential_lsoas,
 )
 from dataset_pipeline import settings as S
 
@@ -25,6 +26,7 @@ df = add_housing_data(df)
 df = add_neighbor_features(df)
 df = add_temporal_features(df)
 df = add_revictimization_risk(df)
+df = filter_residential_lsoas(df)
 
 # save the COMPLETE table
 full_path = DATA_DIR / "features.parquet"

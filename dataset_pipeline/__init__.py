@@ -3,7 +3,7 @@ from .aggregations import create_full_grid, is_holiday_month
 from .demographics import (
     add_population_data, add_imd_data, add_housing_data
 )
-from .spatial import add_neighbor_features
+from .spatial import add_neighbor_features, filter_residential_lsoas
 from .revictimization import add_revictimization_risk
 
 __all__ = [
@@ -16,4 +16,5 @@ __all__ = [
     "add_housing_data",
     "add_neighbor_features",
     "add_revictimization_risk",
+    "filter_residential_lsoas",
 ]

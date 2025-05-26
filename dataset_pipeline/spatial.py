@@ -35,3 +35,18 @@ def add_neighbor_features(main_df: pl.DataFrame,
     ])
 
     return main_df.join(spatial_features, on=[location_col,"year","month"], how="left")
+
+
+def filter_residential_lsoas(df: pl.DataFrame,
+                           lsoa_col: str = "LSOA code",
+                           residential_classification_path: str = _S.RES_CLASS_PATH) -> pl.DataFrame:
+    """Filter dataframe to only include residential-dominant LSOAs"""
+
+    residential_df = pl.read_csv(residential_classification_path)
+
+    residential_lsoas = residential_df.filter(
+        pl.col("is_residential_dominant") == True
+    ).select("LSOA21CD").to_series().to_list()
+
+    # Filter the main dataframe
+    return df.filter(pl.col(lsoa_col).is_in(residential_lsoas))
