@@ -30,7 +30,7 @@ print(f"{'Exponential fit:':<20} y = {exp_popt[0]:.3f} * e^({exp_popt[1]:.3f}) +
 print(f"{'Power law fit:':<20} y = {pow_popt[0]:.3f} * x^({pow_popt[1]:.3f}) + {pow_popt[2]:.3f}\n(R² = {pow_r2:.3f})")
 
 # Plot part
-plt.figure(figsize=(9, 5))
+plt.figure(figsize=(9, 5), dpi=300)
 ax = plt.gca()
 
 x_dense = np.linspace(x.min(), x.max(), 400)
