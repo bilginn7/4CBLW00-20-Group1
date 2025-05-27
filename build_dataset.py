@@ -27,17 +27,20 @@ df.write_parquet(full_path)
 # B. Train-test split (70 / 30, reproducible)
 # ------------------------------------------------------------------#
 target_col = "burglary_count"
-df = df.sort(["LSOA code", "year", "month"])
 
-cut = int(df.height * 0.7)
-train_df = df.slice(0, cut)
-test_df  = df.slice(cut)
+# Find the 70% cutoff point in time_index_norm
+max_time_index = df.select(pl.col("time_index_norm").max()).item()
+split_time_index = max_time_index * 0.7
+
+# Split based on time_index_norm
+train_df = df.filter(pl.col("time_index_norm") <= split_time_index)
+test_df = df.filter(pl.col("time_index_norm") > split_time_index)
 
 X_train = train_df.drop(target_col)
 y_train = train_df.select(target_col)
 
-X_test  = test_df.drop(target_col)
-y_test  = test_df.select(target_col)
+X_test = test_df.drop(target_col)
+y_test = test_df.select(target_col)
 
 # ------------------------------------------------------------------#
 # C. Persist everything
