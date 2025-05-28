@@ -177,3 +177,5 @@ cython_debug/
 
 
 data/crimes
+xgBoost/data/raw
+xgBoost/outputs/predictions.csv
