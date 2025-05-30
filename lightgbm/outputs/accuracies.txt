@@ -1,0 +1,10 @@
+Regular LightGBM
+
+Test RMSE: 3.2255
+Test MAE:  1.1738
+
+Poisson LightGBM
+
+Test RMSE: 1.0844
+Test MAE:  0.7883
+
