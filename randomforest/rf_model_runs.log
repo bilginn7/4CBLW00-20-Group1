@@ -1,0 +1,112 @@
+2025-06-02 08:44:34,154 - __main__ - INFO - Loading training and testing data...
+2025-06-02 08:44:34,231 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 08:44:34,231 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 08:44:34,297 - __main__ - INFO - Number of features: 70
+2025-06-02 08:44:34,298 - __main__ - INFO - Pipeline defined with SimpleImputer(median) and RandomForestRegressor.
+2025-06-02 08:44:34,298 - __main__ - INFO - Starting model training...
+2025-06-02 08:52:00,354 - __main__ - INFO - Model training complete.
+2025-06-02 08:52:00,356 - __main__ - INFO - Generating predictions on the test set...
+2025-06-02 08:52:01,474 - __main__ - INFO - Predictions generated and clipped to be non-negative.
+2025-06-02 08:52:01,481 - __main__ - INFO - --- Model Performance Report ---
+2025-06-02 08:52:01,481 - __main__ - INFO - MSE       :     1.1993
+2025-06-02 08:52:01,481 - __main__ - INFO - RMSE      :     1.0951
+2025-06-02 08:52:01,481 - __main__ - INFO - MAE       :     0.8067
+2025-06-02 08:52:01,481 - __main__ - INFO - R²        :     0.2827
+2025-06-02 08:52:01,481 - __main__ - INFO - EV        :     0.2842
+2025-06-02 08:52:01,481 - __main__ - INFO - --- End of Report ---
+2025-06-02 08:52:01,527 - __main__ - INFO - --- Top 15 Feature Importances ---
+2025-06-02 08:52:01,527 - __main__ - INFO - burglary_count_ewm_12          0.1542
+2025-06-02 08:52:01,528 - __main__ - INFO - revictimization_risk           0.1447
+2025-06-02 08:52:01,528 - __main__ - INFO - burglary_count_ewm_6           0.0763
+2025-06-02 08:52:01,528 - __main__ - INFO - neighbor_burglary_weighted_avg 0.0477
+2025-06-02 08:52:01,528 - __main__ - INFO - population                     0.0242
+2025-06-02 08:52:01,528 - __main__ - INFO - population_density             0.0228
+2025-06-02 08:52:01,528 - __main__ - INFO - burglary_count_tema_6          0.0227
+2025-06-02 08:52:01,528 - __main__ - INFO - time_index_norm                0.0218
+2025-06-02 08:52:01,528 - __main__ - INFO - Crime Score                    0.0216
+2025-06-02 08:52:01,528 - __main__ - INFO - burglary_count_volatility_6m   0.0211
+2025-06-02 08:52:01,528 - __main__ - INFO - Living Environment Score       0.0204
+2025-06-02 08:52:01,528 - __main__ - INFO - Barriers to Housing and Services Score 0.0201
+2025-06-02 08:52:01,528 - __main__ - INFO - burglary_count_trend_ratio     0.0182
+2025-06-02 08:52:01,528 - __main__ - INFO - Education, Skills and Training Score 0.0176
+2025-06-02 08:52:01,528 - __main__ - INFO - neighbor_burglary_std          0.0172
+2025-06-02 08:52:01,528 - __main__ - INFO - --- End of Feature Importances ---
+2025-06-02 09:02:08,103 - __main__ - INFO - Loading training and testing data...
+2025-06-02 09:02:08,173 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 09:02:08,173 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 09:02:08,230 - __main__ - INFO - Number of features: 70
+2025-06-02 09:02:08,232 - __main__ - INFO - Starting hyperparameter tuning with RandomizedSearchCV...
+2025-06-02 19:46:47,271 - __main__ - INFO - Loading training and testing data...
+2025-06-02 19:46:47,327 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 19:46:47,327 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 19:46:47,374 - __main__ - INFO - Number of features: 70
+2025-06-02 19:46:47,376 - __main__ - INFO - Starting hyperparameter tuning with HalvingRandomSearchCV...
+2025-06-02 19:48:40,051 - __main__ - INFO - Loading training and testing data...
+2025-06-02 19:48:40,111 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 19:48:40,111 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 19:48:40,160 - __main__ - INFO - Number of features: 70
+2025-06-02 19:48:40,162 - __main__ - INFO - Starting hyperparameter tuning with HalvingRandomSearchCV...
+2025-06-02 20:03:01,611 - __main__ - INFO - Hyperparameter tuning complete.
+2025-06-02 20:03:01,611 - __main__ - INFO - Best parameters found: {'rf__max_depth': np.int64(27), 'rf__max_features': 1.0, 'rf__min_samples_leaf': 7, 'rf__min_samples_split': 12, 'rf__n_estimators': 252}
+2025-06-02 20:03:01,611 - __main__ - INFO - Best cross-validation score (neg MAE): -1.0761
+2025-06-02 20:03:01,611 - __main__ - INFO - Generating predictions on the test set using the best model...
+2025-06-02 20:03:03,387 - __main__ - INFO - Predictions generated and clipped to be non-negative.
+2025-06-02 20:03:03,393 - __main__ - INFO - --- Model Performance Report ---
+2025-06-02 20:03:03,393 - __main__ - INFO - MSE  :     1.1763
+2025-06-02 20:03:03,393 - __main__ - INFO - RMSE :     1.0846
+2025-06-02 20:03:03,393 - __main__ - INFO - MAE  :     0.7897
+2025-06-02 20:03:03,393 - __main__ - INFO - R²   :     0.2964
+2025-06-02 20:03:03,393 - __main__ - INFO - EV   :     0.2964
+2025-06-02 20:03:03,393 - __main__ - INFO - --- End of Report ---
+2025-06-02 20:03:03,499 - __main__ - INFO - --- Top 15 Feature Importances (Best Tuned Model) ---
+2025-06-02 20:03:03,499 - __main__ - INFO - burglary_count_ewm_12                         0.1985
+2025-06-02 20:03:03,499 - __main__ - INFO - revictimization_risk                          0.1907
+2025-06-02 20:03:03,499 - __main__ - INFO - burglary_count_ewm_6                          0.0901
+2025-06-02 20:03:03,499 - __main__ - INFO - neighbor_burglary_weighted_avg                0.0493
+2025-06-02 20:03:03,499 - __main__ - INFO - population                                    0.0216
+2025-06-02 20:03:03,499 - __main__ - INFO - time_index_norm                               0.0207
+2025-06-02 20:03:03,499 - __main__ - INFO - burglary_count_tema_6                         0.0205
+2025-06-02 20:03:03,499 - __main__ - INFO - population_density                            0.0202
+2025-06-02 20:03:03,499 - __main__ - INFO - Crime Score                                   0.0192
+2025-06-02 20:03:03,499 - __main__ - INFO - Living Environment Score                      0.0183
+2025-06-02 20:03:03,499 - __main__ - INFO - Barriers to Housing and Services Score        0.0174
+2025-06-02 20:03:03,499 - __main__ - INFO - burglary_count_volatility_6m                  0.0161
+2025-06-02 20:03:03,499 - __main__ - INFO - Education, Skills and Training Score          0.0154
+2025-06-02 20:03:03,499 - __main__ - INFO - ALL_PROPERTIES                                0.0143
+2025-06-02 20:03:03,499 - __main__ - INFO - Health Deprivation and Disability Score       0.0143
+2025-06-02 20:03:03,499 - __main__ - INFO - --- End of Feature Importances ---
+2025-06-02 22:12:39,861 - __main__ - INFO - Loading training and testing data...
+2025-06-02 22:12:39,922 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 22:12:39,922 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 22:12:39,970 - __main__ - INFO - Number of features: 70
+2025-06-02 22:12:39,970 - __main__ - INFO - Starting hyperparameter tuning with Optuna...
+2025-06-02 23:43:06,445 - __main__ - INFO - Loading training and testing data...
+2025-06-02 23:43:06,506 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 23:43:06,506 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 23:43:06,555 - __main__ - INFO - Number of features: 70
+2025-06-02 23:43:06,557 - __main__ - INFO - Starting hyperparameter tuning with HalvingRandomSearchCV...
+2025-06-02 23:44:05,799 - __main__ - INFO - Loading training and testing data...
+2025-06-02 23:44:05,899 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 23:44:05,899 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 23:44:05,955 - __main__ - INFO - Number of features: 70
+2025-06-02 23:44:05,959 - __main__ - INFO - Starting hyperparameter tuning with HalvingRandomSearchCV...
+2025-06-02 23:46:43,517 - __main__ - INFO - Loading training and testing data...
+2025-06-02 23:46:43,599 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 23:46:43,599 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 23:46:43,656 - __main__ - INFO - Number of features: 70
+2025-06-02 23:46:43,660 - __main__ - INFO - Starting hyperparameter tuning with HalvingRandomSearchCV...
+2025-06-02 23:47:52,677 - __main__ - INFO - Loading training and testing data...
+2025-06-02 23:47:52,745 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 23:47:52,745 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 23:47:52,794 - __main__ - INFO - Number of features: 70
+2025-06-02 23:47:52,797 - __main__ - INFO - Starting hyperparameter tuning with HalvingRandomSearchCV...
+2025-06-02 23:50:18,669 - __main__ - INFO - Loading training and testing data...
+2025-06-02 23:50:18,754 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-02 23:50:18,754 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-02 23:50:18,805 - __main__ - INFO - Number of features: 70
+2025-06-02 23:50:18,808 - __main__ - INFO - Starting hyperparameter tuning with HalvingRandomSearchCV...
+2025-06-03 00:46:31,734 - __main__ - INFO - Loading training and testing data...
+2025-06-03 00:46:31,800 - __main__ - INFO - X_train shape: (482628, 70), X_test shape: (208704, 70)
+2025-06-03 00:46:31,800 - __main__ - INFO - y_train shape: (482628,), y_test shape: (208704,)
+2025-06-03 00:46:31,849 - __main__ - INFO - Number of features: 70
+2025-06-03 00:46:31,852 - __main__ - INFO - Starting hyperparameter tuning with HalvingRandomSearchCV...
