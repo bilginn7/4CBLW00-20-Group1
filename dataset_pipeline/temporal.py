@@ -5,6 +5,7 @@ import numpy as np
 from .io import to_dataframe, to_lazyframe
 
 DFLike = Union[str, pl.DataFrame, pl.LazyFrame]
+WEIGHTS_CACHE: dict[int, list[int]] = {}
 
 def normalize_time(df, date_col: str = "Month") -> pl.LazyFrame:
     """Adds normalized time columns.
@@ -45,6 +46,46 @@ def normalize_time(df, date_col: str = "Month") -> pl.LazyFrame:
         .drop("Month_dt")
     )
 
+def _weights(n: int) -> list[int]:
+    if n < 1:
+        raise ValueError("period must be ≥ 1")
+    return WEIGHTS_CACHE.setdefault(n, list(range(1, n + 1)))
+
+def _nan_fill(s: pl.Expr | pl.Series) -> pl.Expr | pl.Series:
+    return s.fill_null(float("nan"))
+
+def _mask_nan_to_null(out: pl.Expr | pl.Series) -> pl.Expr | pl.Series:
+    # restore the “proper” nulls for anything that became NaN
+    return pl.when(out.is_nan()).then(None).otherwise(out)
+
+def wma_pl(s: pl.Expr | pl.Series, period: int) -> pl.Expr | pl.Series:
+    """Weighted Moving Average."""
+    x = _nan_fill(s)
+    wma = x.rolling_mean(
+        window_size=period,
+        weights=_weights(period),
+        min_periods=period,
+    )
+    out = _mask_nan_to_null(wma)
+    return out.clip(lower_bound=0)
+
+def hma_pl(s: pl.Expr | pl.Series, period: int) -> pl.Expr | pl.Series:
+    """Hull Moving Average."""
+    half = period // 2
+    root = int(np.sqrt(period))
+    return wma_pl((wma_pl(s, half) * 2) - wma_pl(s, period), root)
+
+def tema_pl(s: pl.Expr | pl.Series, period: int, *, adjust: bool = False) -> pl.Expr | pl.Series:
+    """Triple Exponential Moving Average."""
+    ema1 = s.ewm_mean(span=period, adjust=adjust)
+    ema2 = ema1.ewm_mean(span=period, adjust=adjust)
+    ema3 = ema2.ewm_mean(span=period, adjust=adjust)
+    out = (ema1 * 3) - (ema2 * 3) + ema3
+    return out.clip(lower_bound=0)
+
+def safe_div(num: pl.Expr, den: pl.Expr) -> pl.Expr:
+    """num / den  → null when den is 0 or null"""
+    return pl.when((den == 0) | den.is_null()).then(None).otherwise(num / den)
 
 def add_temporal_features(df: DFLike, *, location_col: str = "LSOA code", target_col: str = "burglary_count") -> pl.LazyFrame:
     """Engineer lagged, rolling, seasonal and derived features.
@@ -53,43 +94,55 @@ def add_temporal_features(df: DFLike, *, location_col: str = "LSOA code", target
     """
     main = to_dataframe(df).sort([location_col, "year", "month"])
 
+    # Lag features
+    lags = (
+        pl.col(target_col).shift(1).over(location_col).alias(f"{target_col}_lag_1"),
+        pl.col(target_col).shift(3).over(location_col).alias(f"{target_col}_lag_3"),
+        pl.col(target_col).shift(6).over(location_col).alias(f"{target_col}_lag_6"),
+        pl.col(target_col).shift(12).over(location_col).alias(f"{target_col}_lag_12"),
+    )
+
+    # Exponential Weighted Moving averages
+    ewms = (
+        pl.col(target_col).ewm_mean(span=6, adjust=False).shift(1).over(location_col).alias(f"{target_col}_ewm_6"),
+        pl.col(target_col).ewm_mean(span=12, adjust=False).shift(1).over(location_col).alias(f"{target_col}_ewm_12"),
+        tema_pl(pl.col(target_col), 6).shift(1).over(location_col).alias(f"{target_col}_tema_6")
+    )
+
+    # Hull Moving average
+    hmas = (
+        hma_pl(pl.col(target_col), 4).shift(1).over(location_col).alias(f"{target_col}_hma_4"),
+        hma_pl(pl.col(target_col), 5).shift(1).over(location_col).alias(f"{target_col}_hma_5"),
+    )
+
+    # Misc temporals
+    extras = (
+        pl.col(target_col).rolling_sum(12).shift(1).over(location_col).alias(f"{target_col}_sum_12"),
+
+        pl.when(pl.col(target_col).rolling_sum(3) > 0).then(1).otherwise(0).shift(1).over(location_col)
+        .alias(f"{target_col}_active_3"),
+
+        # % change (t-3 vs t-6)
+        safe_div(
+            pl.col(target_col).shift(3) - pl.col(target_col).shift(6),
+            pl.col(target_col).shift(6)
+        ).over(location_col).alias(f"{target_col}_pct_change"),
+
+        # σ / μ volatility over last 6 months
+        safe_div(
+            pl.col(target_col).shift(3).rolling_std(6),
+            pl.col(target_col).shift(3).rolling_mean(6)
+        ).over(location_col).alias(f"{target_col}_volatility_6m"),
+
+        # short / long trend ratio
+        safe_div(
+            pl.col(target_col).shift(3).rolling_mean(3),
+            pl.col(target_col).shift(9).rolling_mean(3)
+        ).over(location_col).alias(f"{target_col}_trend_ratio"),
+    )
+
     return (
         main.with_columns([
-            # 1 ── lags ───────────────────────────────────────────────
-            pl.col(target_col).shift(3).over(location_col).alias(f"{target_col}_lag_3"),
-            pl.col(target_col).shift(6).over(location_col).alias(f"{target_col}_lag_6"),
-            pl.col(target_col).shift(12).over(location_col).alias(f"{target_col}_lag_12"),
-
-            # 2 ── rolling stats on shifted data ─────────────────────
-            pl.col(target_col).shift(3).rolling_mean(3).over(location_col).alias(f"{target_col}_avg_3m_lag3"),
-            pl.col(target_col).shift(3).rolling_mean(6).over(location_col).alias(f"{target_col}_avg_6m_lag3"),
-            pl.col(target_col).shift(3).rolling_std(6).over(location_col).alias(f"{target_col}_std_6m_lag3"),
-            pl.col(target_col).shift(3).rolling_max(6).over(location_col).alias(f"{target_col}_max_6m_lag3"),
-            pl.col(target_col).shift(3).rolling_min(6).over(location_col).alias(f"{target_col}_min_6m_lag3"),
-
-            # 3 ── seasonal anchors ──────────────────────────────────
-            pl.col(target_col).shift(12).over(location_col).alias(f"{target_col}_same_month_last_year"),
-            pl.col(target_col).shift(24).over(location_col).alias(f"{target_col}_same_month_2_years_ago"),
-
-            # 4 ── safe differences ──────────────────────────────────
-            (pl.col(target_col).shift(3) - pl.col(target_col).shift(6)).over(location_col).alias(f"{target_col}_diff_3m_6m"),
-            (pl.col(target_col).shift(3) - pl.col(target_col).shift(12)).over(location_col).alias(f"{target_col}_diff_3m_12m"),
-
-            # 5 ── percentage changes ────────────────────────────────
-            ((pl.col(target_col).shift(3) - pl.col(target_col).shift(6)) / (pl.col(target_col).shift(6) + 0.1)).over(location_col).alias(f"{target_col}_pct_change_3m_6m"),
-            ((pl.col(target_col).shift(3) - pl.col(target_col).shift(15)) / (pl.col(target_col).shift(15) + 0.1)).over(location_col).alias(f"{target_col}_pct_change_3m_15m"),
-
-            # 6 ── volatility ────────────────────────────────────────
-            (pl.col(target_col).shift(3).rolling_std(6) / (pl.col(target_col).shift(3).rolling_mean(6) + 0.1)).over(location_col).alias(f"{target_col}_volatility_6m"),
-
-            # 7 ── trend indicator ───────────────────────────────────
-            (pl.col(target_col).shift(3).rolling_mean(3) / (pl.col(target_col).shift(9).rolling_mean(3) + 0.1)).over(location_col).alias(f"{target_col}_trend_ratio"),
-
-            # 8 ── **EWM-weighted lag (NEW)** ─────────────────────────
-            pl.col(target_col).ewm_mean(span=12, adjust=False).shift(1).over(location_col).alias(f"{target_col}_ewm_12"),
-        ]).with_columns([
-            (pl.col(f"{target_col}_lag_3") / (pl.col(f"{target_col}_same_month_last_year") + 0.1)).alias(f"{target_col}_vs_seasonal"),
-            (pl.col(f"{target_col}_std_6m_lag3") / (pl.col(f"{target_col}_avg_6m_lag3") + 0.1)).alias(f"{target_col}_cv_6m"),
-            ((pl.col(f"{target_col}_max_6m_lag3") - pl.col(f"{target_col}_min_6m_lag3")) / (pl.col(f"{target_col}_avg_6m_lag3") + 0.1)).alias(f"{target_col}_range_normalized"),
-        ])
-    ).lazy()
+            *lags, *ewms, *hmas, *extras,
+        ]).lazy()
+    )
