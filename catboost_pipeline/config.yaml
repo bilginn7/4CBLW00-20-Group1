@@ -1,1 +1,19 @@
+## Configuration for CatBoost training and artifacts
+
+# Model hyperparameters passed to CatBoostRegressor
+model_params:
+  iterations: 200              # number of boosting rounds
+  depth: 5                     # depth of each tree
+  learning_rate: 0.05          # shrinkage rate
+  loss_function: RMSE          # loss function for regression
+  random_seed: 42              # for reproducibility
+  cat_features: auto           # or specify list of column names
+
+# Early stopping
+early_stopping_rounds: 50
+
+# Paths for saving models and artifacts
+artifacts:
+  model_path: "catboost_regressor.cbm"   # CatBoost saves as .cbm
+  predictions_path: "outputs/catboost_predictions.csv"
 
