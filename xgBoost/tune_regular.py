@@ -37,7 +37,6 @@ def clean_cols(df):
 
 # --- 1. Load & preprocess data (with path‐existence checks) ---
 
-# Use forward slashes or raw strings to avoid accidental backslash‐escaping
 x_train_path = r"data/X_train.parquet"
 x_test_path  = r"data/X_test.parquet"
 y_train_path = r"data/y_train.parquet"
@@ -53,12 +52,10 @@ print("y_train shape:", y_train.shape)
 print("y_test shape: ", y_test.shape)
 print()
 
-# Make sure y_train / y_test each have exactly one column
 if y_train.shape[1] != 1 or y_test.shape[1] != 1:
     print("ERROR: y_train or y_test has more than one column.")
     sys.exit(1)
 
-# If there are duplicate indices (unlikely), warn:
 if x_train.index.duplicated().any() or x_test.index.duplicated().any():
     print("WARNING: Duplicate indices found in X data.")
 
@@ -67,11 +64,9 @@ if x_train.index.duplicated().any() or x_test.index.duplicated().any():
 x_train["LSOA code"] = x_train["LSOA code"].astype("category")
 x_test ["LSOA code"] = x_test["LSOA code"].astype("category")
 
-# Now clean every column name (replace non‐word chars with '_')
 x_train = clean_cols(x_train)
 x_test  = clean_cols(x_test)
 
-# Check if any columns still have bad characters:
 bad_pattern = re.compile(r'[^\w]')
 bad_cols = [c for c in x_train.columns if bad_pattern.search(c)]
 if bad_cols:
@@ -83,12 +78,10 @@ target_col = y_train.columns[0]
 y_train_ser = y_train[target_col]
 y_test_ser  = y_test[target_col]
 
-# Make sure there are no missing values in target
 if y_train_ser.isna().any() or y_test_ser.isna().any():
     print("ERROR: Missing values found in target. Please impute or drop missing targets.")
     sys.exit(1)
 
-# Label‐encode target to 0..(n_classes−1)
 le_y      = LabelEncoder()
 y_train_e = le_y.fit_transform(y_train_ser)
 y_test_e  = le_y.transform(y_test_ser)
@@ -98,7 +91,6 @@ print(f"Number of unique classes in target: {num_classes}")
 print("Classes (original‐labels):", le_y.classes_)
 print()
 
-# Print training class‐distribution
 class_counts = np.bincount(y_train_e)
 print("Class distribution in training data:")
 for idx, cnt in enumerate(class_counts):
@@ -107,23 +99,23 @@ for idx, cnt in enumerate(class_counts):
 print()
 
 if np.any(class_counts < 3):
-    print("WARNING: Some classes have fewer than 3 samples. Using plain KFold (instead of stratified) may result in folds missing those classes entirely.")
+    print("WARNING: Some classes have fewer than 3 samples. Using plain KFold may result in folds missing those classes entirely.")
     print()
 
 # --- 1c. Encode the "LSOA_code" feature (LabelEncoder) ---
 
+# After clean_cols, "LSOA code" became "LSOA_code"
 le_lsoa = LabelEncoder()
 x_train["LSOA_code"] = le_lsoa.fit_transform(x_train["LSOA_code"].astype(str))
 x_test ["LSOA_code"] = le_lsoa.transform(x_test["LSOA_code"].astype(str))
 
-# Check for missing values in X_train (XGBoost can handle NaNs, but at least warn)
 missing_per_col = x_train.isna().sum()
 if missing_per_col.any():
     print("Warning: Missing values in features (train):")
     print(missing_per_col[missing_per_col > 0])
     print()
 
-# --- 2. Determine n_estimators via xgb.cv (with fixed num_class) ---
+# --- 2. Determine n_estimators via xgb.cv ---
 
 dtrain = xgb.DMatrix(x_train, label=y_train_e)
 
@@ -139,7 +131,7 @@ cv_results = xgb.cv(
     dtrain                = dtrain,
     num_boost_round       = 1000,
     nfold                 = 3,
-    stratified            = False,           # because some classes are rare
+    stratified            = False,
     early_stopping_rounds = 50,
     seed                  = 42,
     verbose_eval          = False
@@ -149,7 +141,7 @@ best_nrounds = cv_results.shape[0]
 print(f"Best number of boosting rounds (n_estimators): {best_nrounds}")
 print()
 
-# --- 3. Define hyper‐parameter grid/distributions for RandomizedSearchCV ---
+# --- 3. Hyper‐parameter grid for RandomizedSearchCV ---
 
 param_dist = {
     "max_depth":        [3, 5, 7, 9, 12],
@@ -161,7 +153,7 @@ param_dist = {
     "reg_lambda":       [1, 5, 10, 50],
 }
 
-# --- 4. RandomizedSearchCV using KFold to avoid missing‐class folds ---
+# --- 4. RandomizedSearchCV using KFold ---
 
 kf = KFold(n_splits=3, shuffle=True, random_state=42)
 
@@ -181,7 +173,7 @@ search_clf = RandomizedSearchCV(
     verbose      = 2,
     random_state = 42,
     n_jobs       = -1,
-    error_score  = "raise"  # Immediately show any fitting errors
+    error_score  = "raise"
 )
 
 print("Starting hyperparameter search (RandomizedSearchCV)...")
@@ -205,8 +197,43 @@ y_pred_e   = best_model.predict(x_test)
 test_acc   = accuracy_score(y_test_e, y_pred_e)
 print(f"Tuned test accuracy: {test_acc:.4f}")
 
-# (Optional) Save results to disk
 output_dir = "xgBoost/outputs"
 os.makedirs(output_dir, exist_ok=True)
 with open(os.path.join(output_dir, "tuned_accuracies.txt"), "w") as f:
     f.write(f"Tuned test accuracy: {test_acc:.4f}\n")
+
+# --- 6. Compute “risk rate” per LSOA and save to CSV ---
+
+# Define “risk” = probability of non‐zero burglary
+# Find index of class “0” in le_y.classes_
+try:
+    zero_class_index = list(le_y.classes_).index(0)
+except ValueError:
+    # If “0” isn’t literally a class label, pick the lowest integer label
+    zero_class_index = 0
+
+# Get probabilities for each test row
+proba = best_model.predict_proba(x_test)  # shape = (n_samples, num_classes)
+# Risk = 1 − P(count=0)
+risk_prob = 1.0 - proba[:, zero_class_index]
+
+# Build DataFrame with LSOA_code and its risk probability
+df_test = x_test[["LSOA_code"]].copy()
+df_test["risk_prob"] = risk_prob
+
+# Map encoded LSOA back to original LSOA string
+df_test["lsoa_original"] = le_lsoa.inverse_transform(df_test["LSOA_code"])
+
+# Aggregate risk by LSOA (average over all test‐rows belonging to that LSOA)
+df_lsoa_risk = (
+    df_test
+    .groupby(["LSOA_code", "lsoa_original"], as_index=False)
+    .agg(risk_rate = pd.NamedAgg(column="risk_prob", aggfunc="mean"))
+)
+
+# Save out a CSV with columns: LSOA_code (string), risk_rate (float)
+risk_output = os.path.join(output_dir, "lsoa_risk_rates.csv")
+df_lsoa_risk[["lsoa_original", "risk_rate"]].rename(columns={"lsoa_original": "lsoa_id"}).to_csv(
+    risk_output, index=False
+)
+print(f"Wrote LSOA risk‐rates to: {risk_output}")
