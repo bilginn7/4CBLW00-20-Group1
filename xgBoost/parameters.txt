@@ -1,0 +1,13 @@
+Best hyperparameters found: {'n_estimators': 214,
+                            'learning_rate': 0.04584571687665483,
+                            'max_depth': 3,
+                            'subsample': 0.33962384629853365,
+                            'colsample_bytree': 0.31726121980923044,
+                            'min_child_weight': 5,
+                            'gamma': 2.842166200731848,
+                            'lambda': 0.000283298482059623,
+                            'alpha': 0.17931669157918048,
+                            'objective': 'reg:squarederror'}
+Best Tuned Model MAE on Test Set:        0.7813
+Best Tuned Model RMSE on Test Set:       1.0731
+Best Tuned Model R2 on Test Set:         0.3113
