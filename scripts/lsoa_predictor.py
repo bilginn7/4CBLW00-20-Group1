@@ -170,7 +170,7 @@ if __name__ == "__main__":
             "--features-path", str(root / "data" / "X_test.parquet"),
             "--lookup-path", str(root / "data" / "london_areas_lookup.parquet"),
             "--start", "2025-03",
-            "--end", "2025-08",
+            "--end", "2025-12",
             # --output omitted -> default
         ]
         logger.info("Injected default arguments: %s", " ".join(sys.argv[1:]))
