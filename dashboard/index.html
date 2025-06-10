@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>London Burglary Predictor Dashboard</title>
+
+    <!-- External CSS Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom CSS -->
+    <!-- PATH UPDATED -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>London Burglary Predictor Dashboard</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="borough-select">Borough:</label>
+                <select id="borough-select">
+                    <option value="">Select Borough</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="ward-select">Ward:</label>
+                <select id="ward-select" disabled>
+                    <option value="">Select Ward</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="lsoa-select">LSOA:</label>
+                <select id="lsoa-select" disabled>
+                    <option value="">Select LSOA</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="map-section">
+                <div class="map-info">Burglary Prediction Map</div>
+                <div class="map-container">
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="title">burglary count per month</div>
+                    </div>
+                    <div class="chart-content">
+                        <canvas id="burglary-chart" class="chart-canvas"></canvas>
+                        <div id="burglary-empty" class="empty-state" style="display: none;">
+                            Select Borough, Ward, and LSOA to view data
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="controls">
+                            <span class="title">officers per hour</span>
+                            <select id="month-select" disabled>
+                                <option value="">Select Month</option>
+                            </select>
+                        </div>
+                        <div class="title">barchart</div>
+                    </div>
+                    <div class="chart-content">
+                        <canvas id="officers-chart" class="chart-canvas"></canvas>
+                        <div id="officers-empty" class="empty-state" style="display: none;">
+                            Select Borough, Ward, LSOA, and Month to view data
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- External JavaScript Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://unpkg.com/parquet-wasm@0.5.0/esm/parquet.js"></script>
+    <script src="https://unpkg.com/geoparquet-wasm-decoders@0.2.2/dist/geoparquet.js"></script>
+
+
+    <!-- Custom JavaScript Modules -->
+    <!-- PATHS UPDATED -->
+    <script src="dashboard/js/config.js"></script>
+    <script src="dashboard/js/dataService.js"></script>
+    <script src="dashboard/js/mapController.js"></script>
+    <script src="dashboard/js/chartController.js"></script>
+    <script src="dashboard/js/uiController.js"></script>
+    <script src="dashboard/js/app.js"></script>
+</body>
+</html>
