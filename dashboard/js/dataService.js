@@ -11,9 +11,7 @@ const DataService = {
             boroughs: null,
             wards: null,
             lsoas: null
-        },
-        // This will now hold the data from features.parquet
-        burglaryData: null
+        }
     },
 
     /**
@@ -25,8 +23,7 @@ const DataService = {
 
             await Promise.all([
                 this.loadLondonPredictions(),
-                this.loadGeographicalData(),
-                this.loadBurglaryData() // This function is now simplified
+                this.loadGeographicalData()
             ]);
 
             console.log('All data loaded successfully');

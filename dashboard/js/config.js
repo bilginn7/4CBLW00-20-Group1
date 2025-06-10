@@ -21,6 +21,7 @@ const CONFIG = {
         TILE_LAYER: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
         ATTRIBUTION: '© OpenStreetMap contributors, © CARTO',
 
+        // Map interaction settings when ward is selected
         WARD_VIEW_OPTIONS: {
             scrollWheelZoom: false,
             dragging: false,
@@ -30,22 +31,54 @@ const CONFIG = {
             zoomControl: false
         },
 
+        // Style configurations
         STYLES: {
-            LONDON_BOROUGHS: { color: 'blue', weight: 2, fillOpacity: 0.1, fillColor: 'lightblue' },
-            WARD_BOUNDARY: { color: 'red', weight: 3, fillOpacity: 0.1, fillColor: 'red' },
-            LSOA_BOUNDARY: { color: 'green', weight: 1, fillOpacity: 0.3, fillColor: 'lightgreen' },
-            LSOA_HIGHLIGHT: { color: 'orange', weight: 3, fillOpacity: 0.6, fillColor: 'yellow' }
+            LONDON_BOROUGHS: {
+                color: 'blue',
+                weight: 2,
+                fillOpacity: 0.1,
+                fillColor: 'lightblue'
+            },
+            WARD_BOUNDARY: {
+                color: 'red',
+                weight: 3,
+                fillOpacity: 0.1,
+                fillColor: 'red'
+            },
+            LSOA_BOUNDARY: {
+                color: 'blue',
+                weight: 1,
+                fillOpacity: 0.3,
+                fillColor: 'lightblue'
+            }
         }
     },
 
     // Chart Configuration
     CHARTS: {
-        BURGLARY: { TYPE: 'line', COLOR: 'black', POINT_RADIUS: 6, LINE_WIDTH: 3, BACKGROUND_COLOR: 'black' },
-        OFFICERS: { TYPE: 'bar', COLOR: 'red', BORDER_COLOR: 'darkred', BORDER_WIDTH: 1 },
+        BURGLARY: {
+            TYPE: 'line',
+            COLOR: 'black',
+            POINT_RADIUS: 6,
+            LINE_WIDTH: 3,
+            BACKGROUND_COLOR: 'black'
+        },
+        OFFICERS: {
+            TYPE: 'bar',
+            COLOR: 'red',
+            BORDER_COLOR: 'darkred',
+            BORDER_WIDTH: 1
+        },
+
+        // Chart.js common options
         COMMON_OPTIONS: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
         }
     },
 
@@ -62,12 +95,14 @@ const CONFIG = {
             BURGLARY_EMPTY: '#burglary-empty',
             OFFICERS_EMPTY: '#officers-empty'
         },
+
         MESSAGES: {
             SELECT_ALL: 'Select Borough, Ward, and LSOA to view data',
             SELECT_WITH_MONTH: 'Select Borough, Ward, LSOA, and Month to view data',
             NO_DATA: 'No data available',
             LOADING: 'Loading...'
         },
+
         PLACEHOLDERS: {
             BOROUGH: 'Select Borough',
             WARD: 'Select Ward',
@@ -92,4 +127,5 @@ const CONFIG = {
     }
 };
 
+// Freeze the configuration to prevent accidental modifications
 Object.freeze(CONFIG);

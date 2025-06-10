@@ -47,11 +47,12 @@ const UIController = {
         this.elements.wardSelect = document.querySelector(CONFIG.UI.SELECTORS.WARD_SELECT);
         this.elements.lsoaSelect = document.querySelector(CONFIG.UI.SELECTORS.LSOA_SELECT);
         this.elements.monthSelect = document.querySelector(CONFIG.UI.SELECTORS.MONTH_SELECT);
+        this.elements.fileInput = document.querySelector('#file-input');
 
         // Verify all elements are found
         Object.entries(this.elements).forEach(([key, element]) => {
             if (!element) {
-                throw new Error(`UI element not found: ${key}`);
+                console.warn(`UI element not found: ${key}`);
             }
         });
     },
@@ -64,6 +65,11 @@ const UIController = {
         this.elements.wardSelect.addEventListener('change', (e) => this.onWardChange(e));
         this.elements.lsoaSelect.addEventListener('change', (e) => this.onLSOAChange(e));
         this.elements.monthSelect.addEventListener('change', (e) => this.onMonthChange(e));
+
+        // File input handler
+        if (this.elements.fileInput) {
+            this.elements.fileInput.addEventListener('change', (e) => this.onFileSelected(e));
+        }
 
         // Window resize handler for responsive charts and map
         window.addEventListener('resize', () => this.onWindowResize());
@@ -213,8 +219,44 @@ const UIController = {
     },
 
     /**
-     * Handle window resize
+     * Handle file selection
+     * @param {Event} event - File input change event
      */
+    async onFileSelected(event) {
+        const file = event.target.files[0];
+
+        if (!file) return;
+
+        if (!file.name.endsWith('.json')) {
+            alert('Please select a JSON file');
+            return;
+        }
+
+        try {
+            console.log('📁 Loading file:', file.name);
+
+            // Show loading state
+            this.setLoadingState('borough', true);
+
+            // Load the file
+            await DataService.loadFromFile(file);
+
+            // Refresh the borough dropdown with new data
+            this.populateBoroughDropdown();
+
+            // Reset all selections
+            this.resetAllSelections();
+
+            console.log('✅ File loaded successfully!');
+
+        } catch (error) {
+            console.error('❌ Error loading file:', error);
+            alert(`Error loading file: ${error.message}`);
+        } finally {
+            this.setLoadingState('borough', false);
+        }
+    },
+
     onWindowResize() {
         // Resize charts
         ChartController.resize();
