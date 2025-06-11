@@ -14,20 +14,32 @@ const App = {
         try {
             console.log('Initializing London Burglary Predictor Dashboard...');
 
-            // Show loading state
+            // Show loading state with progress bar
             this.showLoadingState();
+            this.updateLoadingProgress(0, 'Starting application...');
 
-            // Load all data first
+            // Load all data first with progress updates
+            this.updateLoadingProgress(20, 'Loading prediction data...');
             await DataService.loadAllData();
+            this.updateLoadingProgress(60, 'Processing geographical data...');
 
-            // Initialize map
+            // Initialize map AFTER data is loaded
+            this.updateLoadingProgress(75, 'Initializing map...');
             MapController.init();
 
             // Initialize charts
+            this.updateLoadingProgress(85, 'Setting up charts...');
             ChartController.init();
 
             // Initialize UI controller
+            this.updateLoadingProgress(95, 'Preparing interface...');
             UIController.init();
+
+            // Complete loading
+            this.updateLoadingProgress(100, 'Dashboard ready!');
+
+            // Small delay to show completion
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             // Hide loading state
             this.hideLoadingState();
@@ -47,39 +59,118 @@ const App = {
     },
 
     /**
-     * Show loading state
+     * Show loading state with progress bar
      */
     showLoadingState() {
-        // You could add a loading overlay here
         console.log('Loading dashboard...');
 
-        // Optional: Add loading indicator to the page
+        // Remove any existing loading overlay
+        const existingOverlay = document.querySelector('.loading-overlay');
+        if (existingOverlay) {
+            existingOverlay.remove();
+        }
+
         const container = document.querySelector('.container');
-        if (container && !document.querySelector('.loading-overlay')) {
+        if (container) {
             const loadingOverlay = document.createElement('div');
             loadingOverlay.className = 'loading-overlay';
             loadingOverlay.innerHTML = `
                 <div class="loading-content">
-                    <div class="loading-spinner"></div>
-                    <p>Loading London Burglary Predictor Dashboard...</p>
+                    <div class="loading-logo">
+                        🗺️
+                    </div>
+                    <h2 class="loading-title">London Burglary Predictor Dashboard</h2>
+                    <div class="loading-progress-container">
+                        <div class="loading-progress-bar">
+                            <div class="loading-progress-fill" id="loading-progress-fill"></div>
+                        </div>
+                        <div class="loading-percentage" id="loading-percentage">0%</div>
+                    </div>
+                    <p class="loading-message" id="loading-message">Initializing...</p>
                 </div>
             `;
+
+            // Enhanced loading overlay styles
             loadingOverlay.style.cssText = `
                 position: fixed;
                 top: 0;
                 left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(255, 255, 255, 0.9);
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 z-index: 9999;
                 font-family: Arial, sans-serif;
+                backdrop-filter: blur(10px);
             `;
+
             document.body.appendChild(loadingOverlay);
+
+            // Add CSS for loading components
+            this.addLoadingStyles();
         }
     },
+
+    /**
+     * Update loading progress
+     */
+    updateLoadingProgress(percentage, message) {
+        const progressFill = document.getElementById('loading-progress-fill');
+        const percentageElement = document.getElementById('loading-percentage');
+        const messageElement = document.getElementById('loading-message');
+
+        if (progressFill) {
+            progressFill.style.width = `${percentage}%`;
+        }
+
+        if (percentageElement) {
+            percentageElement.textContent = `${percentage}%`;
+        }
+
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
+
+        console.log(`Loading: ${percentage}% - ${message}`);
+    },
+
+    /**
+     * Add loading styles to the page
+     */
+/**
+ * Show loading state with progress bar
+ */
+showLoadingState() {
+    console.log('Loading dashboard...');
+
+    // Remove any existing loading overlay
+    const existingOverlay = document.querySelector('.loading-overlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'loading-overlay';
+    loadingOverlay.innerHTML = `
+        <div class="loading-content">
+            <div class="loading-logo">
+                🗺️
+            </div>
+            <h2 class="loading-title">London Burglary Predictor Dashboard</h2>
+            <div class="loading-progress-container">
+                <div class="loading-progress-bar">
+                    <div class="loading-progress-fill" id="loading-progress-fill"></div>
+                </div>
+                <div class="loading-percentage" id="loading-percentage">0%</div>
+            </div>
+            <p class="loading-message" id="loading-message">Initializing...</p>
+        </div>
+    `;
+
+    document.body.appendChild(loadingOverlay);
+},
 
     /**
      * Hide loading state
@@ -87,7 +178,13 @@ const App = {
     hideLoadingState() {
         const loadingOverlay = document.querySelector('.loading-overlay');
         if (loadingOverlay) {
-            loadingOverlay.remove();
+            // Fade out animation
+            loadingOverlay.style.opacity = '0';
+            loadingOverlay.style.transition = 'opacity 0.5s ease';
+
+            setTimeout(() => {
+                loadingOverlay.remove();
+            }, 500);
         }
     },
 

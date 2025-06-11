@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>London Burglary Predictor Dashboard</title>
 
+    <!-- Google Fonts - DM Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+
     <!-- External CSS Libraries -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -34,11 +39,16 @@
                     <option value="">Select LSOA</option>
                 </select>
             </div>
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button id="reset-button" class="reset-btn">
+                    🔄 Reset
+                </button>
+            </div>
         </div>
 
         <div class="main-content">
             <div class="map-section">
-                <div class="map-info">Burglary Prediction Map</div>
                 <div class="map-container">
                     <div id="map"></div>
                 </div>
@@ -47,7 +57,17 @@
             <div class="charts-section">
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="title">burglary count per month</div>
+                        <div class="controls">
+                            <span class="title">Burglary count per month</span>
+                            <div class="date-filters">
+                                <label for="start-date">From:</label>
+                                <input type="month" id="start-date" class="date-input">
+                                <label for="end-date">To:</label>
+                                <input type="month" id="end-date" class="date-input">
+                                <button id="apply-filter" class="filter-btn">Filter</button>
+                                <button id="reset-filter" class="filter-btn">Reset</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="chart-content">
                         <canvas id="burglary-chart" class="chart-canvas"></canvas>
@@ -58,14 +78,13 @@
                 </div>
 
                 <div class="chart-container">
-                    <div class="header">
+                    <div class="chart-header">
                         <div class="controls">
                             <span class="title">officers per hour</span>
                             <select id="month-select" disabled>
                                 <option value="">Select Month</option>
                             </select>
                         </div>
-                        <div class="title">barchart</div>
                     </div>
                     <div class="chart-content">
                         <canvas id="officers-chart" class="chart-canvas"></canvas>
@@ -81,28 +100,66 @@
     <!-- External JavaScript Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/1.4.0/chartjs-plugin-annotation.min.js"></script>
 
-  <!-- ───────────────────────── ES-module shim ───────────────────────── -->
-  <script type="module">
-    /* 1️⃣  Parquet-WASM – provides readParquet(Uint8Array) */
-    import { readParquet } from 'https://cdn.jsdelivr.net/npm/parquet-wasm@0.6.1/+esm';
-    window.parquet = { readParquet };                         // global for DataService
+    <!-- Try Apache Arrow parquet library instead -->
+    <script type="module">
+        console.log('🔄 Loading Arrow Parquet libraries...');
 
-    /* 2️⃣  GeoParquet → GeoJSON helper */
-    import { toGeoJson } from 'https://cdn.jsdelivr.net/npm/geoparquet@0.3.0/+esm';
+        try {
+            // Try Apache Arrow library which has better compression support
+            const arrow = await import('https://cdn.jsdelivr.net/npm/apache-arrow@latest/+esm');
+            const { tableFromIPC } = arrow;
 
-    /* DataService calls geoparquet.decode(arrayBuffer) :contentReference[oaicite:2]{index=2}  */
-    window.geoparquet = {
-      /**
-       * Convert a GeoParquet ArrayBuffer to a GeoJSON FeatureCollection
-       * @param {ArrayBuffer|Uint8Array} buffer
-       */
-      decode(buffer) {
-        const arrayBuf = buffer instanceof ArrayBuffer ? buffer : buffer.buffer;
-        return toGeoJson({ file: arrayBuf });
-      }
-    };
-  </script>
+            window.parquet = {
+                async readParquet(data) {
+                    // Try different Arrow methods
+                    try {
+                        const table = arrow.tableFromArrayBuffer(data);
+                        return {
+                            toObject() {
+                                return table.toArray().map(row => row.toJSON());
+                            }
+                        };
+                    } catch (e1) {
+                        console.warn('Arrow tableFromArrayBuffer failed:', e1.message);
+                        throw new Error('Arrow parquet reading failed');
+                    }
+                }
+            };
+            console.log('✅ Apache Arrow loaded');
+        } catch (arrowError) {
+            console.warn('⚠️ Apache Arrow failed:', arrowError.message);
+
+            // Fallback to parquet-wasm
+            try {
+                const { readParquet } = await import('https://cdn.jsdelivr.net/npm/parquet-wasm@latest/+esm');
+                window.parquet = { readParquet };
+                console.log('✅ parquet-wasm fallback loaded');
+            } catch (wasmError) {
+                console.error('❌ All parquet libraries failed');
+                throw wasmError;
+            }
+        }
+
+        // Load GeoParquet
+        const { toGeoJson } = await import('https://cdn.jsdelivr.net/npm/geoparquet@0.3.0/+esm');
+        window.geoparquet = {
+            decode(buffer) {
+                const arrayBuf = buffer instanceof ArrayBuffer ? buffer : buffer.buffer;
+                return toGeoJson({ file: arrayBuf });
+            }
+        };
+        console.log('✅ geoparquet loaded');
+    </script>
+
+    <!-- Register Chart.js Annotation Plugin -->
+    <script>
+        if (typeof Chart !== 'undefined' && typeof window.ChartAnnotation !== 'undefined') {
+            Chart.register(window.ChartAnnotation);
+            console.log('✅ Chart.js annotation plugin registered');
+        }
+    </script>
 
     <!-- Custom JavaScript Modules -->
     <script src="js/config.js"></script>

@@ -1,6 +1,6 @@
 /**
- * UI Controller Module
- * Handles all user interface interactions and state management
+ * Enhanced UI Controller Module
+ * Handles all user interface interactions with historical data integration
  */
 
 const UIController = {
@@ -17,7 +17,8 @@ const UIController = {
         boroughSelect: null,
         wardSelect: null,
         lsoaSelect: null,
-        monthSelect: null
+        monthSelect: null,
+        resetButton: null
     },
 
     /**
@@ -47,6 +48,7 @@ const UIController = {
         this.elements.wardSelect = document.querySelector(CONFIG.UI.SELECTORS.WARD_SELECT);
         this.elements.lsoaSelect = document.querySelector(CONFIG.UI.SELECTORS.LSOA_SELECT);
         this.elements.monthSelect = document.querySelector(CONFIG.UI.SELECTORS.MONTH_SELECT);
+        this.elements.resetButton = document.querySelector('#reset-button');
         this.elements.fileInput = document.querySelector('#file-input');
 
         // Verify all elements are found
@@ -58,13 +60,24 @@ const UIController = {
     },
 
     /**
-     * Setup event listeners for all dropdowns
+     * Setup event listeners for all dropdowns and reset button
      */
     setupEventListeners() {
         this.elements.boroughSelect.addEventListener('change', (e) => this.onBoroughChange(e));
         this.elements.wardSelect.addEventListener('change', (e) => this.onWardChange(e));
         this.elements.lsoaSelect.addEventListener('change', (e) => this.onLSOAChange(e));
         this.elements.monthSelect.addEventListener('change', (e) => this.onMonthChange(e));
+
+        // Reset button handler
+        if (this.elements.resetButton) {
+            this.elements.resetButton.addEventListener('click', () => {
+                console.log('🔄 Reset button clicked!');
+                this.onResetClick();
+            });
+            console.log('✅ Reset button event listener attached');
+        } else {
+            console.error('❌ Reset button not found! Check HTML ID.');
+        }
 
         // File input handler
         if (this.elements.fileInput) {
@@ -76,6 +89,37 @@ const UIController = {
     },
 
     /**
+     * Handle reset button click
+     */
+    onResetClick() {
+        console.log('🔄 Reset button clicked - starting reset process');
+
+        try {
+            // Reset all selections
+            this.resetAllSelections();
+
+            // Add visual feedback to button
+            const button = this.elements.resetButton;
+            if (button) {
+                button.style.transform = 'scale(0.95)';
+                button.style.backgroundColor = '#ff6b6b';
+                button.style.color = 'white';
+
+                setTimeout(() => {
+                    button.style.transform = 'scale(1)';
+                    button.style.backgroundColor = 'white';
+                    button.style.color = '#ff6b6b';
+                }, 150);
+            }
+
+            console.log('✅ Dashboard reset to initial state');
+
+        } catch (error) {
+            console.error('❌ Error during reset:', error);
+        }
+    },
+
+    /**
      * Populate borough dropdown with data
      */
     populateBoroughDropdown() {
@@ -83,6 +127,9 @@ const UIController = {
             const boroughs = DataService.getBoroughs();
 
             this.clearDropdown(this.elements.boroughSelect, CONFIG.UI.PLACEHOLDERS.BOROUGH);
+
+            // Sort boroughs alphabetically by name
+            boroughs.sort((a, b) => a.name.localeCompare(b.name));
 
             boroughs.forEach(borough => {
                 const option = this.createOption(borough.name, borough.code);
@@ -117,11 +164,15 @@ const UIController = {
         // Clear charts
         ChartController.clearAllCharts();
 
-        // Reset map to London view
-        MapController.showLondon();
-
         if (boroughCode) {
+            // Populate ward dropdown
             this.populateWardDropdown(boroughCode);
+
+            // Show wards on map for the selected borough
+            MapController.showBoroughWards(boroughCode, '');
+        } else {
+            // If no borough selected, reset to London view
+            MapController.resetToLondon();
         }
     },
 
@@ -150,44 +201,55 @@ const UIController = {
             // Update map to show ward
             MapController.showWard(wardCode, this.state.selectedBorough);
         } else {
-            MapController.showLondon();
+            MapController.resetToLondon();
         }
     },
 
     /**
-     * Handle LSOA selection change
+     * Handle LSOA selection change - Enhanced with historical data from JSON
      * @param {Event} event - Change event
      */
-    onLSOAChange(event) {
+    async onLSOAChange(event) {
         const lsoaCode = event.target.value;
         console.log('LSOA selected:', lsoaCode);
 
         this.state.selectedLSOA = lsoaCode;
         this.state.selectedMonth = null;
 
-        // Reset month dropdown
         this.resetMonthDropdown();
 
         if (lsoaCode && this.state.selectedWard && this.state.selectedBorough) {
-            // Update burglary chart
-            const predictions = DataService.getPredictions(
-                this.state.selectedBorough,
-                this.state.selectedWard,
-                lsoaCode
-            );
-            ChartController.updateBurglaryChart(predictions);
+            try {
+                // Get both predictions and historical data from JSON
+                const predictions = DataService.getPredictions(
+                    this.state.selectedBorough,
+                    this.state.selectedWard,
+                    lsoaCode
+                );
 
-            // Populate month dropdown for officers chart
-            const officerData = DataService.getOfficerAssignments(
-                this.state.selectedBorough,
-                this.state.selectedWard,
-                lsoaCode
-            );
-            this.populateMonthDropdown(officerData);
+                const historical = DataService.getHistoricalData(
+                    this.state.selectedBorough,
+                    this.state.selectedWard,
+                    lsoaCode
+                );
 
-            // Highlight LSOA on map
-            MapController.highlightLSOA(lsoaCode);
+                // Update chart with both datasets
+                ChartController.updateBurglaryChart(predictions, historical);
 
+                // Populate month dropdown for officers chart
+                const officerData = DataService.getOfficerAssignments(
+                    this.state.selectedBorough,
+                    this.state.selectedWard,
+                    lsoaCode
+                );
+                this.populateMonthDropdown(officerData);
+
+                MapController.highlightLSOA(lsoaCode);
+
+            } catch (error) {
+                console.error('Error updating charts for LSOA:', error);
+                ChartController.clearAllCharts();
+            }
         } else {
             ChartController.clearAllCharts();
         }
@@ -276,6 +338,9 @@ const UIController = {
             this.clearDropdown(this.elements.wardSelect, CONFIG.UI.PLACEHOLDERS.WARD);
             this.elements.wardSelect.disabled = false;
 
+            // Sort wards alphabetically by name
+            wards.sort((a, b) => a.name.localeCompare(b.name));
+
             wards.forEach(ward => {
                 const option = this.createOption(ward.name, ward.code);
                 this.elements.wardSelect.appendChild(option);
@@ -300,6 +365,9 @@ const UIController = {
 
             this.clearDropdown(this.elements.lsoaSelect, CONFIG.UI.PLACEHOLDERS.LSOA);
             this.elements.lsoaSelect.disabled = false;
+
+            // Sort LSOAs alphabetically by name
+            lsoas.sort((a, b) => a.name.localeCompare(b.name));
 
             lsoas.forEach(lsoa => {
                 const option = this.createOption(lsoa.name, lsoa.code);
@@ -335,14 +403,14 @@ const UIController = {
                 this.elements.monthSelect.appendChild(option);
             });
 
-            // Auto-select latest month if configured
+            // Auto-select earliest month instead of latest
             if (CONFIG.APP.AUTO_SELECT_LATEST_MONTH && months.length > 0) {
-                const latestMonth = months[months.length - 1];
-                this.elements.monthSelect.value = latestMonth;
-                this.state.selectedMonth = latestMonth;
+                const earliestMonth = months[0]; // First month instead of last
+                this.elements.monthSelect.value = earliestMonth;
+                this.state.selectedMonth = earliestMonth;
 
                 // Trigger the chart update
-                ChartController.updateOfficersChart(officerData.hourly[latestMonth], latestMonth);
+                ChartController.updateOfficersChart(officerData.hourly[earliestMonth], earliestMonth);
             }
 
             console.log(`Populated month dropdown with ${months.length} months`);
@@ -466,6 +534,9 @@ const UIController = {
      * Reset all selections
      */
     resetAllSelections() {
+        console.log('🔄 Resetting all selections...');
+
+        // Reset internal state
         this.state = {
             selectedBorough: null,
             selectedWard: null,
@@ -473,12 +544,20 @@ const UIController = {
             selectedMonth: null
         };
 
+        // Reset UI elements
         this.elements.boroughSelect.value = '';
         this.resetWardDropdown();
         this.resetLSOADropdown();
         this.resetMonthDropdown();
 
+        // Clear charts
+        console.log('📊 Clearing charts...');
         ChartController.clearAllCharts();
-        MapController.showLondon();
+
+        // Reset map to London view
+        console.log('🗺️ Resetting map...');
+        MapController.resetToLondon();
+
+        console.log('✅ All selections reset successfully');
     }
 };

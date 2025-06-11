@@ -1,13 +1,11 @@
 /**
- * Configuration file for the London Burglary Predictor Dashboard
- * Contains all configuration constants and settings
+ * Configuration file with CSV fallback for historical data
  */
 
 const CONFIG = {
-    // API and Data Sources - UPDATED TO MATCH YOUR FILE STRUCTURE
+    // API and Data Sources - Historical data now comes from JSON
     DATA_SOURCES: {
         LONDON_PREDICTIONS: './data/london_predictions_with_officers.json',
-        HISTORICAL_FEATURES: './data/features.parquet',
         LAD_SHAPES: './data/geo/LAD_shape.parquet',
         WARD_SHAPES: './data/geo/WARD_shape.parquet',
         LSOA_SHAPES: './data/geo/LSOA_shape.parquet'
@@ -21,7 +19,6 @@ const CONFIG = {
         TILE_LAYER: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
         ATTRIBUTION: '© OpenStreetMap contributors, © CARTO',
 
-        // Map interaction settings when ward is selected
         WARD_VIEW_OPTIONS: {
             scrollWheelZoom: false,
             dragging: false,
@@ -31,7 +28,6 @@ const CONFIG = {
             zoomControl: false
         },
 
-        // Style configurations
         STYLES: {
             LONDON_BOROUGHS: {
                 color: 'blue',
@@ -69,8 +65,6 @@ const CONFIG = {
             BORDER_COLOR: 'darkred',
             BORDER_WIDTH: 1
         },
-
-        // Chart.js common options
         COMMON_OPTIONS: {
             responsive: true,
             maintainAspectRatio: false,
@@ -95,14 +89,12 @@ const CONFIG = {
             BURGLARY_EMPTY: '#burglary-empty',
             OFFICERS_EMPTY: '#officers-empty'
         },
-
         MESSAGES: {
             SELECT_ALL: 'Select Borough, Ward, and LSOA to view data',
             SELECT_WITH_MONTH: 'Select Borough, Ward, LSOA, and Month to view data',
             NO_DATA: 'No data available',
             LOADING: 'Loading...'
         },
-
         PLACEHOLDERS: {
             BOROUGH: 'Select Borough',
             WARD: 'Select Ward',
@@ -115,7 +107,8 @@ const CONFIG = {
     APP: {
         DEBUG: true,
         AUTO_SELECT_LATEST_MONTH: true,
-        ENABLE_LOGGING: true
+        ENABLE_LOGGING: true,
+        USE_CSV_FALLBACK: true
     },
 
     // Error Handling
@@ -127,5 +120,4 @@ const CONFIG = {
     }
 };
 
-// Freeze the configuration to prevent accidental modifications
 Object.freeze(CONFIG);

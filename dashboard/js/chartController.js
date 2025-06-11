@@ -1,12 +1,18 @@
 /**
- * Chart Controller Module
- * Handles all chart-related functionality using Chart.js
+ * Enhanced Chart Controller Module
+ * Handles all chart-related functionality with historical data integration
  */
 
 const ChartController = {
     charts: {
         burglary: null,
         officers: null
+    },
+
+    // Store original data for filtering
+    originalData: {
+        historical: {},
+        predictions: {}
     },
 
     /**
@@ -18,8 +24,8 @@ const ChartController = {
 
             this.initBurglaryChart();
             this.initOfficersChart();
+            this.setupDateFilters();
 
-            // Initially hide charts and show empty states
             this.showEmptyState('burglary');
             this.showEmptyState('officers');
 
@@ -32,7 +38,52 @@ const ChartController = {
     },
 
     /**
-     * Initialize the burglary predictions chart
+     * Setup date filter controls
+     */
+    setupDateFilters() {
+        const applyBtn = document.getElementById('apply-filter');
+        const resetBtn = document.getElementById('reset-filter');
+
+        if (applyBtn) {
+            applyBtn.addEventListener('click', () => this.applyDateFilter());
+        }
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetDateFilter());
+        }
+    },
+
+    /**
+     * Apply date range filter to chart
+     */
+    applyDateFilter() {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+
+        if (!startDate || !endDate) {
+            alert('Please select both start and end dates');
+            return;
+        }
+
+        if (startDate > endDate) {
+            alert('Start date must be before end date');
+            return;
+        }
+
+        this.updateBurglaryChart(this.originalData.predictions, this.originalData.historical, startDate, endDate);
+    },
+
+    /**
+     * Reset date filter
+     */
+    resetDateFilter() {
+        document.getElementById('start-date').value = '';
+        document.getElementById('end-date').value = '';
+        this.updateBurglaryChart(this.originalData.predictions, this.originalData.historical);
+    },
+
+    /**
+     * Initialize the burglary predictions chart with historical data support
      */
     initBurglaryChart() {
         const ctx = document.querySelector(CONFIG.UI.SELECTORS.BURGLARY_CHART).getContext('2d');
@@ -41,16 +92,30 @@ const ChartController = {
             type: CONFIG.CHARTS.BURGLARY.TYPE,
             data: {
                 labels: [],
-                datasets: [{
-                    data: [],
-                    borderColor: CONFIG.CHARTS.BURGLARY.COLOR,
-                    backgroundColor: CONFIG.CHARTS.BURGLARY.BACKGROUND_COLOR,
-                    borderWidth: CONFIG.CHARTS.BURGLARY.LINE_WIDTH,
-                    pointRadius: CONFIG.CHARTS.BURGLARY.POINT_RADIUS,
-                    pointBackgroundColor: CONFIG.CHARTS.BURGLARY.COLOR,
-                    fill: false,
-                    tension: 0.1
-                }]
+                datasets: [
+                    {
+                        label: 'Historical Data',
+                        data: [],
+                        borderColor: '#666666',
+                        backgroundColor: '#666666',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#666666',
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Predictions',
+                        data: [],
+                        borderColor: CONFIG.CHARTS.BURGLARY.COLOR,
+                        backgroundColor: CONFIG.CHARTS.BURGLARY.BACKGROUND_COLOR,
+                        borderWidth: CONFIG.CHARTS.BURGLARY.LINE_WIDTH,
+                        pointRadius: CONFIG.CHARTS.BURGLARY.POINT_RADIUS,
+                        pointBackgroundColor: CONFIG.CHARTS.BURGLARY.COLOR,
+                        fill: false,
+                        tension: 0.1
+                    }
+                ]
             },
             options: {
                 ...CONFIG.CHARTS.COMMON_OPTIONS,
@@ -72,7 +137,7 @@ const ChartController = {
                     y: {
                         title: {
                             display: true,
-                            text: 'Predicted Burglaries',
+                            text: 'Burglary Count',
                             font: {
                                 size: 12,
                                 weight: 'bold'
@@ -92,6 +157,40 @@ const ChartController = {
                 elements: {
                     point: {
                         hoverRadius: 8
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'line'
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            predictionLine: {
+                                type: 'line',
+                                scaleID: 'x',
+                                value: null, // Will be set when data is loaded
+                                borderColor: 'red',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                label: {
+                                    enabled: true,
+                                    content: 'Predictions Start',
+                                    position: 'start',
+                                    yAdjust: -10,
+                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    color: 'red',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                display: false // Initially hidden
+                            }
+                        }
                     }
                 }
             }
@@ -163,32 +262,111 @@ const ChartController = {
     },
 
     /**
-     * Update burglary chart with new data
+     * Update burglary chart with historical data and predictions from JSON
      * @param {Object} predictions - Prediction data object
+     * @param {Object} historical - Historical data object
+     * @param {string} startDate - Optional start date filter (YYYY-MM)
+     * @param {string} endDate - Optional end date filter (YYYY-MM)
      */
-    updateBurglaryChart(predictions) {
+    updateBurglaryChart(predictions, historical, startDate = null, endDate = null) {
         if (!predictions || Object.keys(predictions).length === 0) {
             this.showEmptyState('burglary');
             return;
         }
 
         try {
+            // Store original data for filtering
+            this.originalData.predictions = predictions;
+            this.originalData.historical = historical || {};
+
+            const allLabels = [];
+            const historicalValues = [];
+            const predictionValues = [];
+
+            // Filter function
+            const isInDateRange = (dateStr) => {
+                if (!startDate || !endDate) return true;
+                return dateStr >= startDate && dateStr <= endDate;
+            };
+
+            // Add historical data if available
+            if (historical && Object.keys(historical).length > 0) {
+                const historicalMonths = Object.keys(historical)
+                    .filter(isInDateRange)
+                    .sort();
+
+                historicalMonths.forEach(month => {
+                    allLabels.push(month);
+                    historicalValues.push(historical[month]);
+                    predictionValues.push(null);
+                });
+            }
+
+            // Add prediction data
+            const predictionMonths = Object.keys(predictions)
+                .filter(isInDateRange)
+                .sort();
+            const predictionStartIndex = allLabels.length;
+
+            predictionMonths.forEach(month => {
+                allLabels.push(month);
+                historicalValues.push(null);
+                predictionValues.push(predictions[month]);
+            });
+
+            // Update chart
+            this.charts.burglary.data.labels = allLabels;
+            this.charts.burglary.data.datasets[0].data = historicalValues;
+            this.charts.burglary.data.datasets[1].data = predictionValues;
+
+            // Show prediction line if we have historical data
+            if (predictionStartIndex > 0 && predictionStartIndex < allLabels.length) {
+                const predictionStartLabel = allLabels[predictionStartIndex];
+                this.charts.burglary.options.plugins.annotation.annotations.predictionLine.value = predictionStartLabel;
+                this.charts.burglary.options.plugins.annotation.annotations.predictionLine.display = true;
+            } else {
+                this.charts.burglary.options.plugins.annotation.annotations.predictionLine.display = false;
+            }
+
+            this.charts.burglary.update('active');
+            this.showChart('burglary');
+
+            const filterMsg = startDate && endDate ? ` (filtered: ${startDate} to ${endDate})` : '';
+            console.log(`Chart updated: ${Object.keys(historical || {}).length} historical + ${predictionMonths.length} predictions${filterMsg}`);
+
+        } catch (error) {
+            console.error('Error updating burglary chart:', error);
+            this.updateBurglaryChartPredictionsOnly(predictions);
+        }
+    },
+
+    /**
+     * Fallback method to update chart with predictions only
+     * @param {Object} predictions - Prediction data object
+     */
+    updateBurglaryChartPredictionsOnly(predictions) {
+        try {
             const months = Object.keys(predictions).sort();
             const values = months.map(month => predictions[month]);
 
             this.charts.burglary.data.labels = months;
-            this.charts.burglary.data.datasets[0].data = values;
-            this.charts.burglary.update('active');
+            this.charts.burglary.data.datasets[0].data = []; // No historical data
+            this.charts.burglary.data.datasets[1].data = values;
 
+            // Hide prediction line since we have no historical data
+            this.charts.burglary.options.plugins.annotation.annotations.predictionLine.display = false;
+
+            this.charts.burglary.update('active');
             this.showChart('burglary');
 
-            console.log('Burglary chart updated with data for months:', months);
-
+            console.log('Burglary chart updated with predictions only');
         } catch (error) {
-            console.error('Error updating burglary chart:', error);
+            console.error('Error updating burglary chart with predictions only:', error);
             this.showEmptyState('burglary');
         }
     },
+
+
 
     /**
      * Update officers chart with new data
@@ -219,7 +397,6 @@ const ChartController = {
             };
 
             this.charts.officers.update('active');
-
             this.showChart('officers');
 
             console.log(`Officers chart updated with data for month: ${month}`);
@@ -265,6 +442,8 @@ const ChartController = {
         if (this.charts.burglary) {
             this.charts.burglary.data.labels = [];
             this.charts.burglary.data.datasets[0].data = [];
+            this.charts.burglary.data.datasets[1].data = [];
+            this.charts.burglary.options.plugins.annotation.annotations.predictionLine.display = false;
             this.charts.burglary.update('none');
         }
 
