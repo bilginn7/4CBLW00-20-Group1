@@ -15,10 +15,80 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
+
+    <!-- In the <head> section -->
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <link rel="shortcut icon" href="favicon.ico">
 </head>
 <body>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-button active" data-tab="dashboard">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor">
+                <!-- Your SVG path data here -->
+                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+            </svg>
+            Dashboard
+        </button>
+        <button class="tab-button" data-tab="help">
+            <img src="images/help-icon.svg" alt="Help" class="tab-icon">
+            Help
+        </button>
+    </div>
+
+    <!-- Help Overlay -->
+    <div class="help-overlay" id="help-overlay">
+        <div class="help-content">
+            <button class="help-close" id="help-close">✕</button>
+            <h2>How to Use the Dashboard</h2>
+
+            <section class="help-section">
+                <h3>🗺️ Getting Started</h3>
+                <p>This dashboard helps you explore burglary predictions across London's boroughs, wards, and LSOAs.</p>
+            </section>
+
+            <section class="help-section">
+                <h3>📍 Navigation</h3>
+                <ol>
+                    <li><strong>Select a Borough:</strong> Choose from the dropdown or click on the map</li>
+                    <li><strong>Select a Ward:</strong> Pick a ward within the selected borough</li>
+                    <li><strong>Select an LSOA:</strong> Choose a specific Lower Layer Super Output Area</li>
+                    <li><strong>View Predictions:</strong> Charts will update with burglary predictions and officer assignments</li>
+                </ol>
+            </section>
+
+            <section class="help-section">
+                <h3>📊 Charts</h3>
+                <ul>
+                    <li><strong>Burglary Count:</strong> Shows historical data and predictions by month</li>
+                    <li><strong>Officers per Hour:</strong> Displays recommended officer deployments throughout the day</li>
+                </ul>
+            </section>
+
+            <section class="help-section">
+                <h3>🔄 Tips</h3>
+                <ul>
+                    <li>Use the date filters to focus on specific time periods</li>
+                    <li>Click the month selector to view officer data for different months</li>
+                    <li>Click the Reset button to start over</li>
+                    <li>When viewing LSOAs, you can pan the map within the ward boundaries</li>
+                </ul>
+            </section>
+        </div>
+    </div>
+
+    <!-- App Container -->
     <div class="container">
         <h1>London Burglary Predictor Dashboard</h1>
+
+        <!-- Metropolitan Police Emblem -->
+        <div class="emblem-container">
+            <img src="images/MET_EMBLEM.png" alt="Metropolitan Police" class="met-emblem">
+        </div>
 
         <div class="controls">
             <div class="control-group">
@@ -40,7 +110,7 @@
                 </select>
             </div>
             <div class="control-group">
-                <label>&nbsp;</label>
+                <label> </label>
                 <button id="reset-button" class="reset-btn">
                     🔄 Reset
                 </button>
@@ -77,19 +147,36 @@
                     </div>
                 </div>
 
+                <!-- officers chart – updated header -->
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="controls">
-                            <span class="title">officers per hour</span>
-                            <select id="month-select" disabled>
-                                <option value="">Select Month</option>
-                            </select>
+                    <div class="chart-header officers-header">
+                        <!-- centred selector ------------------------------------------------- -->
+                        <div class="month-selector" id="month-selector">
+                            <button class="month-arrow" id="prev-month" disabled>‹</button>
+                            <span class="month-display" id="month-display">Select Month</span>
+                            <button class="month-arrow" id="next-month" disabled>›</button>
+
+                            <!-- 📆 calendar pop-over (hidden by default) -->
+                            <div class="month-calendar" id="month-calendar">
+                                <div class="calendar-header">
+                                    <button class="calendar-arrow" id="prev-year">‹</button>
+                                    <span id="calendar-year">—</span>
+                                    <button class="calendar-arrow" id="next-year">›</button>
+                                </div>
+                                <div class="calendar-body" id="calendar-body"></div>
+                            </div>
                         </div>
+
+                        <!-- title sits below selector → centred -->
+                        <span class="title">Officers per hour</span>
+
+                        <!-- CHANGE: Removed the hidden native <select> to simplify logic -->
                     </div>
+
                     <div class="chart-content">
                         <canvas id="officers-chart" class="chart-canvas"></canvas>
-                        <div id="officers-empty" class="empty-state" style="display: none;">
-                            Select Borough, Ward, LSOA, and Month to view data
+                        <div id="officers-empty" class="empty-state" style="display:none">
+                            Select Borough, Ward, LSOA and Month to view data
                         </div>
                     </div>
                 </div>
@@ -97,59 +184,63 @@
         </div>
     </div>
 
+    <!-- CHANGE: Templates for dynamic content (Loading/Error overlays) -->
+    <template id="loading-overlay-template">
+        <div class="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-logo">🗺️</div>
+                <h2 class="loading-title">London Burglary Predictor Dashboard</h2>
+                <div class="loading-progress-container">
+                    <div class="loading-progress-bar">
+                        <div class="loading-progress-fill" id="loading-progress-fill"></div>
+                    </div>
+                    <div class="loading-percentage" id="loading-percentage">0%</div>
+                </div>
+                <p class="loading-message" id="loading-message">Initializing...</p>
+            </div>
+        </div>
+    </template>
+
+    <template id="error-overlay-template">
+        <div class="error-overlay">
+            <div class="error-content">
+                <h2>⚠️ Error</h2>
+                <p id="error-message-text">An unexpected error occurred.</p>
+                <button id="error-reload-btn">Reload Page</button>
+            </div>
+        </div>
+    </template>
+
     <!-- External JavaScript Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/1.4.0/chartjs-plugin-annotation.min.js"></script>
 
-    <!-- Try Apache Arrow parquet library instead -->
+    <!-- Parquet Libraries -->
     <script type="module">
         console.log('🔄 Loading Arrow Parquet libraries...');
-
         try {
-            // Try Apache Arrow library which has better compression support
             const arrow = await import('https://cdn.jsdelivr.net/npm/apache-arrow@latest/+esm');
-            const { tableFromIPC } = arrow;
-
             window.parquet = {
                 async readParquet(data) {
-                    // Try different Arrow methods
-                    try {
-                        const table = arrow.tableFromArrayBuffer(data);
-                        return {
-                            toObject() {
-                                return table.toArray().map(row => row.toJSON());
-                            }
-                        };
-                    } catch (e1) {
-                        console.warn('Arrow tableFromArrayBuffer failed:', e1.message);
-                        throw new Error('Arrow parquet reading failed');
-                    }
+                    const table = arrow.tableFromIPC(data);
+                    return { toObject: () => table.toArray().map(row => row.toJSON()) };
                 }
             };
             console.log('✅ Apache Arrow loaded');
         } catch (arrowError) {
-            console.warn('⚠️ Apache Arrow failed:', arrowError.message);
-
-            // Fallback to parquet-wasm
+            console.warn('⚠️ Apache Arrow failed, falling back to parquet-wasm:', arrowError.message);
             try {
                 const { readParquet } = await import('https://cdn.jsdelivr.net/npm/parquet-wasm@latest/+esm');
                 window.parquet = { readParquet };
                 console.log('✅ parquet-wasm fallback loaded');
             } catch (wasmError) {
-                console.error('❌ All parquet libraries failed');
+                console.error('❌ All parquet libraries failed to load.');
                 throw wasmError;
             }
         }
-
-        // Load GeoParquet
         const { toGeoJson } = await import('https://cdn.jsdelivr.net/npm/geoparquet@0.3.0/+esm');
-        window.geoparquet = {
-            decode(buffer) {
-                const arrayBuf = buffer instanceof ArrayBuffer ? buffer : buffer.buffer;
-                return toGeoJson({ file: arrayBuf });
-            }
-        };
+        window.geoparquet = { decode: (buffer) => toGeoJson({ file: buffer instanceof ArrayBuffer ? buffer : buffer.buffer }) };
         console.log('✅ geoparquet loaded');
     </script>
 
@@ -166,6 +257,7 @@
     <script src="js/dataService.js"></script>
     <script src="js/mapController.js"></script>
     <script src="js/chartController.js"></script>
+    <script src="js/tabController.js"></script>
     <script src="js/uiController.js"></script>
     <script src="js/app.js"></script>
 </body>

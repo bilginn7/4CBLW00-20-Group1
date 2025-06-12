@@ -1,9 +1,9 @@
 /**
- * Configuration file with CSV fallback for historical data
+ * Configuration file for the application
  */
 
 const CONFIG = {
-    // API and Data Sources - Historical data now comes from JSON
+    // API and Data Sources
     DATA_SOURCES: {
         LONDON_PREDICTIONS: './data/london_predictions_with_officers.json',
         LAD_SHAPES: './data/geo/LAD_shape.geoparquet',
@@ -30,22 +30,40 @@ const CONFIG = {
 
         STYLES: {
             LONDON_BOROUGHS: {
-                color: 'blue',
+                color: '#1E88E5',
                 weight: 2,
                 fillOpacity: 0.1,
-                fillColor: 'lightblue'
+                fillColor: '#1E88E5'
             },
-            WARD_BOUNDARY: {
-                color: 'red',
-                weight: 3,
+            CLICKABLE_WARD_BOUNDARY: {
+                color: '#DA4C80',
+                weight: 2,
+                fillOpacity: 0.2,
+                fillColor: '#DA4C80'
+            },
+            ACTIVE_WARD_BOUNDARY: {
+                color: '#DE0000',
+                weight: 4,
                 fillOpacity: 0.1,
-                fillColor: 'red'
+                fillColor: '#DE0000'
+            },
+            INACTIVE_WARD_BOUNDARY: {
+                color: '#DA4C80',
+                weight: 2,
+                fillOpacity: 0.2,
+                fillColor: '#DA4C80'
             },
             LSOA_BOUNDARY: {
-                color: 'blue',
-                weight: 1,
+                color: '#004D40',
+                weight: 2,
                 fillOpacity: 0.3,
-                fillColor: 'lightblue'
+                fillColor: '#004D40'
+            },
+            HIGHLIGHTED_LSOA: {
+                color: '#FFC107',
+                weight: 3,
+                fillOpacity: 0.6,
+                fillColor: '#FFC107'
             }
         }
     },
@@ -79,15 +97,30 @@ const CONFIG = {
     // UI Configuration
     UI: {
         SELECTORS: {
+            // Main Dropdowns
             BOROUGH_SELECT: '#borough-select',
             WARD_SELECT: '#ward-select',
             LSOA_SELECT: '#lsoa-select',
-            MONTH_SELECT: '#month-select',
+            // Main Controls
+            RESET_BUTTON: '#reset-button',
+            // Map
             MAP: '#map',
+            // Charts
             BURGLARY_CHART: '#burglary-chart',
             OFFICERS_CHART: '#officers-chart',
             BURGLARY_EMPTY: '#burglary-empty',
-            OFFICERS_EMPTY: '#officers-empty'
+            OFFICERS_EMPTY: '#officers-empty',
+            // Month Selector Widget
+            MONTH_SELECTOR: '#month-selector',
+            MONTH_DISPLAY: '#month-display',
+            PREV_MONTH_BTN: '#prev-month',
+            NEXT_MONTH_BTN: '#next-month',
+            // Month Calendar Popup
+            MONTH_CALENDAR: '#month-calendar',
+            PREV_YEAR_BTN: '#prev-year',
+            NEXT_YEAR_BTN: '#next-year',
+            CALENDAR_YEAR: '#calendar-year',
+            CALENDAR_BODY: '#calendar-body'
         },
         MESSAGES: {
             SELECT_ALL: 'Select Borough, Ward, and LSOA to view data',
@@ -107,8 +140,6 @@ const CONFIG = {
     APP: {
         DEBUG: true,
         AUTO_SELECT_LATEST_MONTH: true,
-        ENABLE_LOGGING: true,
-        USE_CSV_FALLBACK: true
     },
 
     // Error Handling

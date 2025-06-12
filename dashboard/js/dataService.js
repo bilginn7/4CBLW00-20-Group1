@@ -1,6 +1,5 @@
 /**
  * Enhanced Data Service Module with Improved Parquet Handling
- * Handles all data loading and management operations
  */
 
 const DataService = {
@@ -11,8 +10,7 @@ const DataService = {
             boroughs: null,
             wards: null,
             lsoas: null
-        },
-        burglaryData: null
+        }
     },
 
     /**
@@ -73,50 +71,10 @@ const DataService = {
 
             console.log('Geographical data loaded and converted to GeoJSON');
             return this.cache.geoData;
-        } catch (error) {
+        } catch (error)
+        {
             console.error('Error loading geographical data:', error);
             throw error;
-        }
-    },
-
-    getHistoricalData(boroughCode, wardCode, lsoaCode) {
-        try {
-            return this.cache.londonData[boroughCode].wards[wardCode].lsoas[lsoaCode].historical || {};
-        } catch (error) {
-            console.warn('Historical data not found for:', { boroughCode, wardCode, lsoaCode });
-            return {};
-        }
-    },
-
-    /**
-     * Alternative parquet loading method using different compression handling
-     */
-    async loadParquetAlternative(url) {
-        console.log('🔄 Trying alternative parquet loading method...');
-
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-
-        const arrayBuffer = await response.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-
-        // Try with different parquet reading options
-        try {
-            // Option 1: Try with minimal options
-            const parquetFile = await parquet.readParquet(uint8Array);
-            return parquetFile.toObject();
-        } catch (error1) {
-            console.warn('Minimal options failed:', error1.message);
-
-            try {
-                // Option 2: Try reading as table first
-                const parquetFile = await parquet.readParquet(uint8Array);
-                const table = parquetFile.toTable();
-                return table.toArray();
-            } catch (error2) {
-                console.warn('Table method failed:', error2.message);
-                throw new Error(`Both alternative methods failed: ${error1.message}, ${error2.message}`);
-            }
         }
     },
 
@@ -128,51 +86,32 @@ const DataService = {
         return geoparquet.decode(arrayBuffer);
     },
 
-    // Helper to load a standard Parquet file with better error handling
-    async loadStandardParquet(url) {
-        console.log(`🔄 Loading parquet file: ${url}`);
+    // --- Data Getter Functions ---
 
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-
-        const arrayBuffer = await response.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-
-        try {
-            const parquetFile = await parquet.readParquet(uint8Array);
-            const result = parquetFile.toObject();
-
-            console.log(`✅ Successfully loaded parquet file with ${result.length} records`);
-            return result;
-
-        } catch (error) {
-            // Enhanced error reporting for compression issues
-            if (error.message.includes('compression') || error.message.includes('codec')) {
-                throw new Error(`Unsupported compression in parquet file. Error: ${error.message}. Try recompressing with SNAPPY or GZIP compression.`);
-            } else if (error.message.includes('undefined') && error.message.includes('stack_pointer')) {
-                throw new Error(`Parquet file format issue. This might be due to unsupported compression (like ZSTD). Error: ${error.message}`);
-            } else {
-                throw new Error(`Parquet reading failed: ${error.message}`);
-            }
-        }
-    },
-
-    // --- All getter methods remain unchanged ---
     getBoroughs() {
         if (!this.cache.londonData) throw new Error('London data not loaded');
-        return Object.entries(this.cache.londonData).map(([code, data]) => ({ code, name: data.name, wards: Object.keys(data.wards || {}).length }));
+        return Object.entries(this.cache.londonData).map(([code, data]) => ({
+            code,
+            name: data.name
+        }));
     },
 
     getWards(boroughCode) {
         if (!this.cache.londonData || !this.cache.londonData[boroughCode]) return [];
         const wards = this.cache.londonData[boroughCode].wards || {};
-        return Object.entries(wards).map(([code, data]) => ({ code, name: data.name, lsoas: Object.keys(data.lsoas || {}).length }));
+        return Object.entries(wards).map(([code, data]) => ({
+            code,
+            name: data.name
+        }));
     },
 
     getLSOAs(boroughCode, wardCode) {
-        if (!this.cache.londonData || !this.cache.londonData[boroughCode] || !this.cache.londonData[boroughCode].wards[wardCode]) return [];
+        if (!this.cache.londonData?.[boroughCode]?.wards?.[wardCode]) return [];
         const lsoas = this.cache.londonData[boroughCode].wards[wardCode].lsoas || {};
-        return Object.entries(lsoas).map(([code, data]) => ({ code, name: data.name, hasPredictions: !!data.predictions, hasOfficerData: !!data.officer_assignments }));
+        return Object.entries(lsoas).map(([code, data]) => ({
+            code,
+            name: data.name
+        }));
     },
 
     getPredictions(boroughCode, wardCode, lsoaCode) {
@@ -193,28 +132,46 @@ const DataService = {
         }
     },
 
-    /**
-     * Get detailed information about the loaded data for debugging
-     */
-    getDataInfo() {
-        const info = {
-            londonData: {
-                loaded: !!this.cache.londonData,
-                boroughCount: this.cache.londonData ? Object.keys(this.cache.londonData).length : 0
-            },
-            geoData: {
-                boroughs: !!this.cache.geoData.boroughs,
-                wards: !!this.cache.geoData.wards,
-                lsoas: !!this.cache.geoData.lsoas
-            },
-            burglaryData: {
-                loaded: !!this.cache.burglaryData,
-                recordCount: this.cache.burglaryData ? this.cache.burglaryData.length : 0,
-                sampleColumns: this.cache.burglaryData && this.cache.burglaryData.length > 0 ? Object.keys(this.cache.burglaryData[0]) : []
-            }
-        };
+    getHistoricalData(boroughCode, wardCode, lsoaCode) {
+        try {
+            return this.cache.londonData[boroughCode].wards[wardCode].lsoas[lsoaCode].historical || {};
+        } catch (error) {
+            console.warn('Historical data not found for:', { boroughCode, wardCode, lsoaCode });
+            return {};
+        }
+    },
 
-        console.log('📊 Data Service Info:', info);
-        return info;
+    /**
+     * Get combined metadata for a single LSOA from the main JSON data.
+     * @param {string} boroughCode
+     * @param {string} wardCode
+     * @param {string} lsoaCode
+     * @returns {Object|null} An object with LSOA metadata, or null if not found.
+     */
+    getLSOADataFromJSON(boroughCode, wardCode, lsoaCode) {
+        try {
+            const lsoa = this.cache.londonData[boroughCode].wards[wardCode].lsoas[lsoaCode];
+            if (!lsoa) {
+                // This check prevents further errors down the line if the LSOA doesn't exist.
+                throw new Error(`LSOA ${lsoaCode} not found in data structure.`);
+            }
+
+            return {
+                code: lsoaCode,
+                name: lsoa.name || lsoaCode,
+                hasPredictions: !!lsoa.predictions,
+                hasOfficerData: !!lsoa.officer_assignments
+            };
+        } catch (error) {
+            // Log a warning but don't crash the application.
+            console.warn(`Could not retrieve LSOA metadata for ${lsoaCode}:`, error.message);
+            // Return a default object so the map doesn't completely break on hover/highlight.
+            return {
+                code: lsoaCode,
+                name: lsoaCode,
+                hasPredictions: false,
+                hasOfficerData: false
+            };
+        }
     }
 };
