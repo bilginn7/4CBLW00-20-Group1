@@ -1,6 +1,6 @@
 /**
  * Enhanced Chart Controller Module
- * Handles all chart-related functionality with historical data integration
+ * Handles all chart-related functionality with historical data integration and burglary marker coordination
  */
 
 const ChartController = {
@@ -42,12 +42,14 @@ const ChartController = {
         if (!startDate || !endDate) return alert('Please select both start and end dates');
         if (startDate > endDate) return alert('Start date must be before end date');
         this.updateBurglaryChart(this.originalData.predictions, this.originalData.historical, startDate, endDate);
+        MapController.updateBurglaryMarkersForDateFilter(startDate, endDate);
     },
 
     resetDateFilter() {
         document.getElementById('start-date').value = '';
         document.getElementById('end-date').value = '';
         this.updateBurglaryChart(this.originalData.predictions, this.originalData.historical);
+        MapController.updateBurglaryMarkersForDateFilter(null, null);
     },
 
     initBurglaryChart() {

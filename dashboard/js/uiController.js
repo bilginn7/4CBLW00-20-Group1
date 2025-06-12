@@ -1,5 +1,5 @@
 /**
- * Enhanced UI Controller Module
+ * Enhanced UI Controller Module with Burglary Marker Integration
  * Handles all user interface interactions and orchestrates updates.
  */
 const UIController = {
@@ -93,17 +93,39 @@ const UIController = {
                 const { selectedBorough, selectedWard } = this.state;
                 const predictions = DataService.getPredictions(selectedBorough, selectedWard, lsoaCode);
                 const historical = DataService.getHistoricalData(selectedBorough, selectedWard, lsoaCode);
-                ChartController.updateBurglaryChart(predictions, historical);
+
+                // Check if there's an active date filter
+                const startDate = document.getElementById('start-date').value || null;
+                const endDate = document.getElementById('end-date').value || null;
+
+                // Update chart with date filter if it exists
+                ChartController.updateBurglaryChart(predictions, historical, startDate, endDate);
 
                 const officerData = DataService.getOfficerAssignments(selectedBorough, selectedWard, lsoaCode);
                 this.populateMonthWidget(officerData);
 
                 MapController.highlightLSOA(lsoaCode);
+
+                this.addBurglaryMarkersForCurrentSelection();
+
             } catch (error) {
                 console.error('Error updating charts for LSOA:', error);
                 ChartController.clearAllCharts();
             }
         }
+    },
+
+    // Add burglary markers for current selection considering date filter
+    addBurglaryMarkersForCurrentSelection() {
+        const { selectedBorough, selectedWard, selectedLSOA } = this.state;
+        if (!selectedBorough || !selectedWard || !selectedLSOA) return;
+
+        // Get current date filter values
+        const startDate = document.getElementById('start-date').value || null;
+        const endDate = document.getElementById('end-date').value || null;
+
+        // Add burglary markers to map
+        MapController.addBurglaryMarkers(selectedBorough, selectedWard, selectedLSOA, startDate, endDate);
     },
 
     /** Directly update the officers chart when a month is chosen */
@@ -147,6 +169,8 @@ const UIController = {
         this.elements.boroughSelect.value = '';
         this._resetDownstream('borough'); // This will reset everything else
         MapController.resetToLondon();
+        document.getElementById('start-date').value = '';
+        document.getElementById('end-date').value = '';
     },
 
     // --- Month Selector Widget Logic ---
@@ -275,5 +299,6 @@ const UIController = {
             }
         }
         ChartController.clearAllCharts();
+        MapController.clearBurglaryMarkers();
     }
 };

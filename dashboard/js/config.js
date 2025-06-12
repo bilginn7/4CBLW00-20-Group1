@@ -6,6 +6,7 @@ const CONFIG = {
     // API and Data Sources
     DATA_SOURCES: {
         LONDON_PREDICTIONS: './data/london_predictions_with_officers.json',
+        BURGLARY_LOCATIONS: './data/london_areas_with_burglaries.json', // NEW
         LAD_SHAPES: './data/geo/LAD_shape.geoparquet',
         WARD_SHAPES: './data/geo/WARD_shape.geoparquet',
         LSOA_SHAPES: './data/geo/LSOA_shape.geoparquet'
@@ -64,6 +65,13 @@ const CONFIG = {
                 weight: 3,
                 fillOpacity: 0.6,
                 fillColor: '#FFC107'
+            },
+            BURGLARY_MARKER: {
+                color: '#FF4444',
+                fillColor: '#FF6666',
+                fillOpacity: 0.8,
+                radius: 4,
+                weight: 1
             }
         }
     },

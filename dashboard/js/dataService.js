@@ -6,6 +6,7 @@ const DataService = {
     // Cache for loaded data
     cache: {
         londonData: null,
+        burglaryData: null,
         geoData: {
             boroughs: null,
             wards: null,
@@ -22,6 +23,7 @@ const DataService = {
 
             await Promise.all([
                 this.loadLondonPredictions(),
+                this.loadBurglaryGeoData(),
                 this.loadGeographicalData()
             ]);
 
@@ -47,6 +49,23 @@ const DataService = {
             return this.cache.londonData;
         } catch (error) {
             console.error('Error loading London predictions:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Load burglary geolocation data from JSON file
+     */
+    async loadBurglaryGeoData() {
+        if (this.cache.burglaryData) return this.cache.burglaryData;
+        try {
+            const response = await fetch(CONFIG.DATA_SOURCES.BURGLARY_LOCATIONS);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            this.cache.burglaryData = await response.json();
+            console.log('Burglary geolocation data loaded');
+            return this.cache.burglaryData;
+        } catch (error) {
+            console.error('Error loading burglary geolocation data:', error);
             throw error;
         }
     },
@@ -142,6 +161,65 @@ const DataService = {
     },
 
     /**
+     * Get burglary locations for a specific LSOA and date range
+     * @param {string} boroughCode
+     * @param {string} wardCode
+     * @param {string} lsoaCode
+     * @param {string} startDate - Format: YYYY-MM (optional)
+     * @param {string} endDate - Format: YYYY-MM (optional)
+     * @returns {Array} Array of burglary locations with lat/lng
+     */
+    getBurglaryLocations(boroughCode, wardCode, lsoaCode, startDate = null, endDate = null) {
+        try {
+            const burglaryData = this.cache.burglaryData[boroughCode]?.wards?.[wardCode]?.lsoas?.[lsoaCode]?.burglaries_by_month;
+            if (!burglaryData) return [];
+
+            let allBurglaries = [];
+
+            // Filter by date range if provided
+            const months = Object.keys(burglaryData);
+            const filteredMonths = months.filter(month => {
+                if (!startDate || !endDate) return true;
+                return month >= startDate && month <= endDate;
+            });
+
+            // Collect all burglary locations from filtered months
+            filteredMonths.forEach(month => {
+                const monthlyBurglaries = burglaryData[month] || [];
+                monthlyBurglaries.forEach(burglary => {
+                    allBurglaries.push({
+                        latitude: burglary.latitude,
+                        longitude: burglary.longitude,
+                        month: month
+                    });
+                });
+            });
+
+            return allBurglaries;
+        } catch (error) {
+            console.warn('Burglary locations not found for:', { boroughCode, wardCode, lsoaCode });
+            return [];
+        }
+    },
+
+    /**
+     * Get all available months with burglary data for a specific LSOA
+     * @param {string} boroughCode
+     * @param {string} wardCode
+     * @param {string} lsoaCode
+     * @returns {Array} Array of month strings
+     */
+    getBurglaryMonths(boroughCode, wardCode, lsoaCode) {
+        try {
+            const burglaryData = this.cache.burglaryData[boroughCode]?.wards?.[wardCode]?.lsoas?.[lsoaCode]?.burglaries_by_month;
+            return burglaryData ? Object.keys(burglaryData).sort() : [];
+        } catch (error) {
+            console.warn('Burglary months not found for:', { boroughCode, wardCode, lsoaCode });
+            return [];
+        }
+    },
+
+    /**
      * Get combined metadata for a single LSOA from the main JSON data.
      * @param {string} boroughCode
      * @param {string} wardCode
@@ -156,11 +234,15 @@ const DataService = {
                 throw new Error(`LSOA ${lsoaCode} not found in data structure.`);
             }
 
+            // Check if burglary geolocation data exists
+            const hasBurglaryLocations = !!(this.cache.burglaryData?.[boroughCode]?.wards?.[wardCode]?.lsoas?.[lsoaCode]?.burglaries_by_month);
+
             return {
                 code: lsoaCode,
                 name: lsoa.name || lsoaCode,
                 hasPredictions: !!lsoa.predictions,
-                hasOfficerData: !!lsoa.officer_assignments
+                hasOfficerData: !!lsoa.officer_assignments,
+                hasBurglaryLocations: hasBurglaryLocations
             };
         } catch (error) {
             // Log a warning but don't crash the application.
@@ -170,7 +252,8 @@ const DataService = {
                 code: lsoaCode,
                 name: lsoaCode,
                 hasPredictions: false,
-                hasOfficerData: false
+                hasOfficerData: false,
+                hasBurglaryLocations: false
             };
         }
     }
