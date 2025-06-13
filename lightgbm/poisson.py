@@ -4,7 +4,7 @@ import numpy as np
 import re
 import warnings
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 warnings.filterwarnings("ignore")
 
@@ -44,8 +44,10 @@ y_pred = reg.predict(x_test)
 
 rmse = np.sqrt(mean_squared_error(y_test_ser, y_pred))
 mae  = mean_absolute_error(y_test_ser, y_pred)
+r2 = r2_score(y_test_ser, y_pred)
 print(f"Test RMSE: {rmse:.4f}")
 print(f"Test MAE:  {mae:.4f}")
+print(f"Test R2:  {r2:.4f}")
 
 results_df = x_test.copy()
 results_df["Actual"] = y_test_ser.values
