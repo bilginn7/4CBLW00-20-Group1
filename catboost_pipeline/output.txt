@@ -1,0 +1,11 @@
+Best hyper-parameters: {'iterations': 528,
+                        'learning_rate': 0.049151231755410175,
+                        'depth': 6,
+                        'l2_leaf_reg': 1.5783739438979258,
+                        'border_count': 147,
+                        'bootstrap_type': 'Bayesian',
+                        'bagging_temperature': 6.9706208264382505,
+                        'loss_function': 'RMSE'}
+Best Tuned Model MAE on Test Set:           0.7938
+Best Tuned Model RMSE on Test Set:          1.0749
+Best Tuned Model R2 on Test Set:            0.3090
