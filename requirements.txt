@@ -1,1 +1,35 @@
-lightgbm
+# Core data manipulation and analysis
+polars>=1.22.0
+pandas>=2.2.3
+numpy>=2.2.3
+
+# Machine learning frameworks
+lightgbm>=4.6.0
+xgboost>=3.0.2
+catboost>=1.2.8
+scikit-learn>=1.6.1
+scipy>=1.13.1
+shap>=0.46.0
+
+# Hyperparameter optimization
+optuna>=4.3.0
+
+# Statistical analysis
+statsmodels>=0.14.4
+
+# Geospatial analysis
+geopandas>=1.0.1
+contextily>=1.6.2
+
+# Visualization
+matplotlib>=3.10.0
+seaborn>=0.13.2
+shapely>=2.1.0
+
+# File I/O and data formats
+pyarrow>=20.0.0
+contextily>=1.6.2
+
+# Progress bars and utilities (for optuna)
+tqdm>=4.67.1
+tqdm_joblib>=0.0.4

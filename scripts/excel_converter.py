@@ -62,20 +62,6 @@ def main():
     """Convert Excel file into parquet file."""
     parallel = [
         {
-            'data' : 'saiefy1920finalqaddownload280923.xlsx',
-            'sheet' : 'Total annual income',
-            'cols' : [0, 6, 7, 8, 9],
-            'header' : 4,
-            'output' : 'annual_income_2020'
-        },
-        {
-            'data' : 'NSSEC.xlsx',
-            'sheet' : '2021',
-            'cols' : list(range(2,13)),
-            'header' : 0,
-            'output' : 'socioeconomics'
-        },
-        {
             'data' : 'sapelsoapopulationdensity20112022.xlsx',
             'sheet' : 'Mid-2011 to mid-2022 LSOA 2021',
             'cols' : list(range(2, 29)),

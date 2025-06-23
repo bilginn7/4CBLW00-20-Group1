@@ -170,7 +170,7 @@ def main():
     lookup_path = "../data/london_areas_lookup.parquet"
     burglary_path = "../data/london_burglaries.parquet"
     residential_path = "../data/geo/lsoa_residential_classification_2018.csv"
-    output_path = "../data/london_areas_with_burglaries.json"
+    output_path = "../dashboard/data/london_areas_with_burglaries.json"
 
     try:
         # Get LSOA codes that are both in burglary data AND residential dominant

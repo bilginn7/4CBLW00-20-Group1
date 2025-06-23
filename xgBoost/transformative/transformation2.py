@@ -92,10 +92,7 @@ def load_predictions(json_path: Path) -> dict:
     """Load and return the nested prediction dictionary from the JSON file."""
     possible_paths = [
         json_path,
-        Path("london_future_predictions.json"),
-        Path("outputs/london_future_predictions.json"),
-        Path("../outputs/london_future_predictions.json"),
-        Path("../../xgBoost/outputs/london_future_predictions.json"),
+        Path("../../data/london_future_predictions.json"),
     ]
 
     for path_to_try in possible_paths:
